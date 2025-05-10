@@ -27,3 +27,16 @@ flask_session/
 # Logs
 logs/*
 !logs/.gitkeep
+
+# Problem files
+er.name*
+*مكتب المحامي*
+*.exe
+*.bat
+قراري*.txt
+تشغيل*.bat
+نظام*.exe
+
+# Temp files
+*.tmp
+*.temp
