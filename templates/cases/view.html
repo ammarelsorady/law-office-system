@@ -1,0 +1,293 @@
+{% extends "layout/base.html" %}
+
+{% block title %}عرض القضية - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>تفاصيل القضية: {{ case.case_number }}</h1>
+    <div>
+        <a href="{{ url_for('cases.edit_case', case_id=case.id) }}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> تعديل
+        </a>
+        <a href="{{ url_for('cases.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> العودة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">معلومات القضية</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">رقم القضية:</div>
+                    <div class="col-md-8">{{ case.case_number }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">العنوان:</div>
+                    <div class="col-md-8">{{ case.title }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">نوع القضية:</div>
+                    <div class="col-md-8">{{ case.case_type }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">المحكمة:</div>
+                    <div class="col-md-8">{{ case.court }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">الحالة:</div>
+                    <div class="col-md-8">
+                        {% if case.status == 'open' %}
+                        <span class="badge bg-success">مفتوحة</span>
+                        {% elif case.status == 'closed' %}
+                        <span class="badge bg-secondary">مغلقة</span>
+                        {% elif case.status == 'pending' %}
+                        <span class="badge bg-warning">معلقة</span>
+                        {% elif case.status == 'postponed' %}
+                        <span class="badge bg-info">مؤجلة</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">تاريخ الفتح:</div>
+                    <div class="col-md-8">{{ case.opened_date.strftime('%Y-%m-%d') }}</div>
+                </div>
+                {% if case.closed_date %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">تاريخ الإغلاق:</div>
+                    <div class="col-md-8">{{ case.closed_date.strftime('%Y-%m-%d') }}</div>
+                </div>
+                {% endif %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">اسم الخصم:</div>
+                    <div class="col-md-8">{{ case.opponent_name }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">الوصف:</div>
+                    <div class="col-md-8">{{ case.description }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- المستندات المرفقة -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">المستندات المرفقة</h5>
+                <a href="{{ url_for('documents.add_document') }}?case_id={{ case.id }}" class="btn btn-sm btn-light">
+                    <i class="fas fa-plus"></i> إضافة مستند
+                </a>
+            </div>
+            <div class="card-body">
+                {% if case.documents %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>العنوان</th>
+                                <th>النوع</th>
+                                <th>تاريخ الرفع</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for document in case.documents %}
+                            <tr>
+                                <td>{{ document.title }}</td>
+                                <td>{{ document.document_type }}</td>
+                                <td>{{ document.uploaded_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('documents.view_document', document_id=document.id) }}" class="btn btn-sm btn-info" title="عرض">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('documents.download_document', document_id=document.id) }}" class="btn btn-sm btn-success" title="تنزيل">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">لا توجد مستندات مرفقة.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- الجلسات والمواعيد -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">الجلسات والمواعيد</h5>
+                <a href="{{ url_for('appointments.add_appointment') }}?case_id={{ case.id }}" class="btn btn-sm btn-light">
+                    <i class="fas fa-plus"></i> إضافة موعد
+                </a>
+            </div>
+            <div class="card-body">
+                {% if case.appointments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>العنوان</th>
+                                <th>التاريخ</th>
+                                <th>النوع</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in case.appointments %}
+                            <tr>
+                                <td>{{ appointment.title }}</td>
+                                <td>{{ appointment.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    {% if appointment.appointment_type == 'hearing' %}
+                                    <span class="badge bg-primary">جلسة</span>
+                                    {% elif appointment.appointment_type == 'meeting' %}
+                                    <span class="badge bg-info">اجتماع</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">تذكير</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if appointment.status == 'scheduled' %}
+                                    <span class="badge bg-warning">مجدول</span>
+                                    {% elif appointment.status == 'completed' %}
+                                    <span class="badge bg-success">مكتمل</span>
+                                    {% elif appointment.status == 'cancelled' %}
+                                    <span class="badge bg-danger">ملغي</span>
+                                    {% elif appointment.status == 'postponed' %}
+                                    <span class="badge bg-secondary">مؤجل</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('appointments.view_appointment', appointment_id=appointment.id) }}" class="btn btn-sm btn-info" title="عرض">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">لا توجد مواعيد مسجلة.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- الفواتير -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">الفواتير</h5>
+                <a href="{{ url_for('invoices.add_invoice') }}?case_id={{ case.id }}" class="btn btn-sm btn-light">
+                    <i class="fas fa-plus"></i> إضافة فاتورة
+                </a>
+            </div>
+            <div class="card-body">
+                {% if case.invoices %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>رقم الفاتورة</th>
+                                <th>المبلغ</th>
+                                <th>تاريخ الإصدار</th>
+                                <th>تاريخ الاستحقاق</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in case.invoices %}
+                            <tr>
+                                <td>{{ invoice.invoice_number }}</td>
+                                <td>{{ "%.2f"|format(invoice.amount) }}</td>
+                                <td>{{ invoice.issue_date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ invoice.due_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if invoice.status == 'paid' %}
+                                    <span class="badge bg-success">مدفوعة</span>
+                                    {% elif invoice.status == 'unpaid' %}
+                                    <span class="badge bg-danger">غير مدفوعة</span>
+                                    {% elif invoice.status == 'partial' %}
+                                    <span class="badge bg-warning">مدفوعة جزئياً</span>
+                                    {% elif invoice.status == 'cancelled' %}
+                                    <span class="badge bg-secondary">ملغاة</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('invoices.view_invoice', invoice_id=invoice.id) }}" class="btn btn-sm btn-info" title="عرض">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">لا توجد فواتير مسجلة.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- معلومات العميل -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">معلومات العميل</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <img src="https://ui-avatars.com/api/?name={{ case.client.first_name }}+{{ case.client.last_name }}&size=100&background=random" alt="صورة العميل" class="rounded-circle">
+                </div>
+                <h5 class="text-center mb-3">{{ case.client.first_name }} {{ case.client.last_name }}</h5>
+                <div class="mb-2">
+                    <i class="fas fa-id-card me-2"></i> {{ case.client.id_number or 'غير متوفر' }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-envelope me-2"></i> {{ case.client.email or 'غير متوفر' }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-phone me-2"></i> {{ case.client.phone }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-map-marker-alt me-2"></i> {{ case.client.address or 'غير متوفر' }}
+                </div>
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{{ url_for('clients.view_client', client_id=case.client.id) }}" class="btn btn-primary">
+                        <i class="fas fa-user"></i> عرض ملف العميل
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- معلومات المحامي -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">المحامي المسؤول</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <img src="https://ui-avatars.com/api/?name={{ case.lawyer.first_name }}+{{ case.lawyer.last_name }}&size=100&background=random" alt="صورة المحامي" class="rounded-circle">
+                </div>
+                <h5 class="text-center mb-3">{{ case.lawyer.first_name }} {{ case.lawyer.last_name }}</h5>
+                <div class="mb-2">
+                    <i class="fas fa-envelope me-2"></i> {{ case.lawyer.email }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-phone me-2"></i> {{ case.lawyer.phone or 'غير متوفر' }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

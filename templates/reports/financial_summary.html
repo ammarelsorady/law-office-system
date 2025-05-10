@@ -1,0 +1,497 @@
+{% extends "layout/base.html" %}
+
+{% block title %}التقرير المالي الشامل - {{ app_name }}{% endblock %}
+
+{% block styles %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+    
+    .stats-card {
+        border-right: 5px solid;
+        transition: transform 0.3s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stats-card.total-invoices {
+        border-right-color: #007bff;
+    }
+    
+    .stats-card.total-payments {
+        border-right-color: #28a745;
+    }
+    
+    .stats-card.pending-payments {
+        border-right-color: #ffc107;
+    }
+    
+    .stats-card.overdue-invoices {
+        border-right-color: #dc3545;
+    }
+    
+    .stats-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .stats-card .stats-icon {
+        font-size: 2.5rem;
+        opacity: 0.3;
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+    }
+    
+    .stats-card .stats-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    
+    .stats-card .stats-text {
+        font-size: 1rem;
+        text-transform: uppercase;
+        margin-bottom: 0;
+    }
+    
+    .stats-card .stats-amount {
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    
+    .table-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    @media print {
+        .no-print {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>التقرير المالي الشامل</h1>
+    <div class="no-print">
+        <div class="btn-group me-2">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="periodDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                {{ period_text }}
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="periodDropdown">
+                <li><a class="dropdown-item" href="{{ url_for('reports.financial_summary', period='month') }}">الشهر الحالي</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.financial_summary', period='quarter') }}">الربع الحالي</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.financial_summary', period='year') }}">السنة الحالية</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.financial_summary', period='all') }}">كل الفترات</a></li>
+            </ul>
+        </div>
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary me-2">
+            <i class="fas fa-arrow-left"></i> العودة للتقارير
+        </a>
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> طباعة التقرير
+        </button>
+    </div>
+</div>
+
+<!-- معلومات التقرير -->
+<div class="alert alert-info mb-4">
+    <div class="row">
+        <div class="col-md-4">
+            <strong>الفترة:</strong> {{ period_text }}
+        </div>
+        <div class="col-md-4">
+            <strong>تاريخ التقرير:</strong> {{ report_date.strftime('%Y-%m-%d') }}
+        </div>
+        <div class="col-md-4">
+            <strong>إجمالي الإيرادات:</strong> {{ "%.2f"|format(total_revenue) }} دينار
+        </div>
+    </div>
+</div>
+
+<!-- بطاقات الإحصائيات -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card total-invoices">
+            <div class="card-body">
+                <i class="fas fa-file-invoice-dollar stats-icon"></i>
+                <div class="stats-number">{{ total_invoices_count }}</div>
+                <p class="stats-text">إجمالي الفواتير</p>
+                <div class="stats-amount text-primary">
+                    {{ "%.2f"|format(total_invoices_amount) }} دينار
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card total-payments">
+            <div class="card-body">
+                <i class="fas fa-money-bill-wave stats-icon"></i>
+                <div class="stats-number">{{ total_payments_count }}</div>
+                <p class="stats-text">إجمالي المدفوعات</p>
+                <div class="stats-amount text-success">
+                    {{ "%.2f"|format(total_payments_amount) }} دينار
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card pending-payments">
+            <div class="card-body">
+                <i class="fas fa-hourglass-half stats-icon"></i>
+                <div class="stats-number">{{ pending_invoices_count }}</div>
+                <p class="stats-text">فواتير غير مدفوعة</p>
+                <div class="stats-amount text-warning">
+                    {{ "%.2f"|format(pending_invoices_amount) }} دينار
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card overdue-invoices">
+            <div class="card-body">
+                <i class="fas fa-exclamation-triangle stats-icon"></i>
+                <div class="stats-number">{{ overdue_invoices_count }}</div>
+                <p class="stats-text">فواتير متأخرة</p>
+                <div class="stats-amount text-danger">
+                    {{ "%.2f"|format(overdue_invoices_amount) }} دينار
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- الرسم البياني للإيرادات الشهرية -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">الإيرادات الشهرية</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="monthlyRevenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- الرسم البياني لحالة الفواتير -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">حالة الفواتير</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="invoiceStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- جدول الفواتير -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">أحدث الفواتير</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>رقم الفاتورة</th>
+                        <th>العميل</th>
+                        <th>القضية</th>
+                        <th>المبلغ</th>
+                        <th>تاريخ الإصدار</th>
+                        <th>تاريخ الاستحقاق</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in recent_invoices %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('invoices.view_invoice', invoice_id=invoice.id) }}">
+                                {{ invoice.invoice_number }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('clients.view_client', client_id=invoice.client.id) }}">
+                                {{ invoice.client.first_name }} {{ invoice.client.last_name }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if invoice.case %}
+                            <a href="{{ url_for('cases.view_case', case_id=invoice.case.id) }}">
+                                {{ invoice.case.case_number }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ "%.2f"|format(invoice.amount) }} دينار</td>
+                        <td>{{ invoice.issue_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ invoice.due_date.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            {% if invoice.status == 'paid' %}
+                            <span class="badge bg-success">مدفوعة</span>
+                            {% elif invoice.status == 'unpaid' %}
+                            <span class="badge bg-danger">غير مدفوعة</span>
+                            {% elif invoice.status == 'partial' %}
+                            <span class="badge bg-warning">مدفوعة جزئياً</span>
+                            {% elif invoice.status == 'cancelled' %}
+                            <span class="badge bg-secondary">ملغاة</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- جدول المدفوعات -->
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">أحدث المدفوعات</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>رقم الفاتورة</th>
+                        <th>العميل</th>
+                        <th>المبلغ</th>
+                        <th>تاريخ الدفع</th>
+                        <th>طريقة الدفع</th>
+                        <th>رقم المرجع</th>
+                        <th>المستلم</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in recent_payments %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('invoices.view_invoice', invoice_id=payment.invoice.id) }}">
+                                {{ payment.invoice.invoice_number }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('clients.view_client', client_id=payment.invoice.client.id) }}">
+                                {{ payment.invoice.client.first_name }} {{ payment.invoice.client.last_name }}
+                            </a>
+                        </td>
+                        <td>{{ "%.2f"|format(payment.amount) }} دينار</td>
+                        <td>{{ payment.payment_date.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            {% if payment.payment_method == 'cash' %}
+                            نقداً
+                            {% elif payment.payment_method == 'bank_transfer' %}
+                            تحويل بنكي
+                            {% elif payment.payment_method == 'credit_card' %}
+                            بطاقة ائتمان
+                            {% else %}
+                            {{ payment.payment_method }}
+                            {% endif %}
+                        </td>
+                        <td>{{ payment.reference_number or '-' }}</td>
+                        <td>{{ payment.received_by_user.first_name }} {{ payment.received_by_user.last_name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- الفواتير المتأخرة -->
+<div class="card mb-4">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">الفواتير المتأخرة</h5>
+    </div>
+    <div class="card-body">
+        {% if overdue_invoices %}
+        <div class="table-container">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>رقم الفاتورة</th>
+                        <th>العميل</th>
+                        <th>المبلغ</th>
+                        <th>تاريخ الإصدار</th>
+                        <th>تاريخ الاستحقاق</th>
+                        <th>التأخير (أيام)</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in overdue_invoices %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('invoices.view_invoice', invoice_id=invoice.id) }}">
+                                {{ invoice.invoice_number }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('clients.view_client', client_id=invoice.client.id) }}">
+                                {{ invoice.client.first_name }} {{ invoice.client.last_name }}
+                            </a>
+                        </td>
+                        <td>{{ "%.2f"|format(invoice.amount) }} دينار</td>
+                        <td>{{ invoice.issue_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ invoice.due_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ invoice.days_overdue }}</td>
+                        <td>
+                            <a href="{{ url_for('invoices.add_payment', invoice_id=invoice.id) }}" class="btn btn-sm btn-success no-print">
+                                <i class="fas fa-plus-circle"></i> إضافة دفعة
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> لا توجد فواتير متأخرة.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // بيانات الرسم البياني للإيرادات الشهرية
+        const monthlyData = {
+            labels: {{ monthly_labels|tojson }},
+            datasets: [
+                {
+                    label: 'الفواتير',
+                    data: {{ monthly_invoices|tojson }},
+                    backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'المدفوعات',
+                    data: {{ monthly_payments|tojson }},
+                    backgroundColor: 'rgba(40, 167, 69, 0.5)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    borderWidth: 1
+                }
+            ]
+        };
+        
+        // إعدادات الرسم البياني للإيرادات الشهرية
+        const monthlyConfig = {
+            type: 'bar',
+            data: monthlyData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'المبلغ (دينار)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'JOD' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        
+        // إنشاء الرسم البياني للإيرادات الشهرية
+        const monthlyChart = new Chart(
+            document.getElementById('monthlyRevenueChart'),
+            monthlyConfig
+        );
+        
+        // بيانات الرسم البياني لحالة الفواتير
+        const statusData = {
+            labels: ['مدفوعة', 'غير مدفوعة', 'مدفوعة جزئياً', 'ملغاة'],
+            datasets: [{
+                data: [
+                    {{ paid_invoices_count }},
+                    {{ unpaid_invoices_count }},
+                    {{ partial_invoices_count }},
+                    {{ cancelled_invoices_count }}
+                ],
+                backgroundColor: ['#28a745', '#dc3545', '#ffc107', '#6c757d'],
+                borderWidth: 1
+            }]
+        };
+        
+        // إعدادات الرسم البياني لحالة الفواتير
+        const statusConfig = {
+            type: 'doughnut',
+            data: statusData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        
+        // إنشاء الرسم البياني لحالة الفواتير
+        const statusChart = new Chart(
+            document.getElementById('invoiceStatusChart'),
+            statusConfig
+        );
+    });
+</script>
+{% endblock %}

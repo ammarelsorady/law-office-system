@@ -1,0 +1,111 @@
+{% extends "layout/base.html" %}
+
+{% block title %}القضايا - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>القضايا</h1>
+    {% if session.role in ['admin', 'lawyer'] %}
+    <a href="{{ url_for('cases.add_case') }}" class="btn btn-primary">
+        <i class="fas fa-plus-circle"></i> إضافة قضية جديدة
+    </a>
+    {% endif %}
+</div>
+
+<!-- نموذج البحث -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="{{ url_for('cases.search_cases') }}" method="GET" class="row g-3">
+            <div class="col-md-10">
+                <input type="text" name="query" class="form-control" placeholder="البحث في القضايا..." required>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> بحث
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- فلتر الحالة -->
+<div class="mb-4">
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('cases.index') }}" class="btn btn-outline-primary active">الكل</a>
+        <a href="{{ url_for('cases.index', status='open') }}" class="btn btn-outline-success">مفتوحة</a>
+        <a href="{{ url_for('cases.index', status='closed') }}" class="btn btn-outline-secondary">مغلقة</a>
+        <a href="{{ url_for('cases.index', status='pending') }}" class="btn btn-outline-warning">معلقة</a>
+        <a href="{{ url_for('cases.index', status='postponed') }}" class="btn btn-outline-info">مؤجلة</a>
+    </div>
+</div>
+
+{% if cases %}
+<div class="table-responsive">
+    <table class="table table-hover table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>رقم القضية</th>
+                <th>العنوان</th>
+                <th>العميل</th>
+                <th>المحكمة</th>
+                <th>نوع القضية</th>
+                <th>تاريخ الفتح</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for case in cases %}
+            <tr>
+                <td>{{ case.case_number }}</td>
+                <td>{{ case.title }}</td>
+                <td>
+                    <a href="{{ url_for('clients.view_client', client_id=case.client.id) }}">
+                        {{ case.client.first_name }} {{ case.client.last_name }}
+                    </a>
+                </td>
+                <td>{{ case.court }}</td>
+                <td>{{ case.case_type }}</td>
+                <td>{{ case.opened_date.strftime('%Y-%m-%d') }}</td>
+                <td>
+                    {% if case.status == 'open' %}
+                    <span class="badge bg-success">مفتوحة</span>
+                    {% elif case.status == 'closed' %}
+                    <span class="badge bg-secondary">مغلقة</span>
+                    {% elif case.status == 'pending' %}
+                    <span class="badge bg-warning">معلقة</span>
+                    {% elif case.status == 'postponed' %}
+                    <span class="badge bg-info">مؤجلة</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('cases.view_case', case_id=case.id) }}" class="btn btn-sm btn-info" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ url_for('cases.edit_case', case_id=case.id) }}" class="btn btn-sm btn-warning" title="تعديل">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% if session.role == 'admin' %}
+                        <button type="button" class="btn btn-sm btn-danger btn-delete" title="حذف"
+                                onclick="if(confirm('هل أنت متأكد من رغبتك في حذف هذه القضية؟')) {
+                                    document.getElementById('delete-form-{{ case.id }}').submit();
+                                }">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <form id="delete-form-{{ case.id }}" action="{{ url_for('cases.delete_case', case_id=case.id) }}" method="POST" style="display: none;">
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> لا توجد قضايا متاحة.
+</div>
+{% endif %}
+{% endblock %}

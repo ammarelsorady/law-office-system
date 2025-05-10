@@ -1,0 +1,99 @@
+{% extends "layout/base.html" %}
+
+{% block title %}تعديل المستند - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">تعديل المستند: {{ document.title }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('documents.edit_document', document_id=document.id) }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">عنوان المستند</label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ document.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="document_type" class="form-label">نوع المستند</label>
+                        <select class="form-select" id="document_type" name="document_type" required>
+                            <option value="contract" {% if document.document_type == 'contract' %}selected{% endif %}>عقد</option>
+                            <option value="court_document" {% if document.document_type == 'court_document' %}selected{% endif %}>مستند محكمة</option>
+                            <option value="id" {% if document.document_type == 'id' %}selected{% endif %}>هوية</option>
+                            <option value="power_of_attorney" {% if document.document_type == 'power_of_attorney' %}selected{% endif %}>توكيل</option>
+                            <option value="report" {% if document.document_type == 'report' %}selected{% endif %}>تقرير</option>
+                            <option value="other" {% if document.document_type == 'other' or not document.document_type in ['contract', 'court_document', 'id', 'power_of_attorney', 'report'] %}selected{% endif %}>آخر</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">وصف المستند</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ document.description or '' }}</textarea>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="case_ids" class="form-label">القضايا المرتبطة (اختياري)</label>
+                            <select class="form-select" id="case_ids" name="case_ids" multiple>
+                                {% for case in cases %}
+                                <option value="{{ case.id }}" {% if case.id in document_case_ids %}selected{% endif %}>{{ case.case_number }} - {{ case.title }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">اضغط Ctrl للاختيار المتعدد</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="client_ids" class="form-label">العملاء المرتبطين (اختياري)</label>
+                            <select class="form-select" id="client_ids" name="client_ids" multiple>
+                                {% for client in clients %}
+                                <option value="{{ client.id }}" {% if client.id in document_client_ids %}selected{% endif %}>{{ client.first_name }} {{ client.last_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">اضغط Ctrl للاختيار المتعدد</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">معلومات الملف الحالي</label>
+                        <div class="alert alert-info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>اسم الملف:</strong> {{ document.file_path.split('/')[-1] }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>نوع الملف:</strong> {{ document.file_type }}
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-6">
+                                    <strong>حجم الملف:</strong>
+                                    {% if document.file_size < 1024 %}
+                                    {{ document.file_size }} بايت
+                                    {% elif document.file_size < 1048576 %}
+                                    {{ (document.file_size / 1024)|round(2) }} كيلوبايت
+                                    {% else %}
+                                    {{ (document.file_size / 1048576)|round(2) }} ميجابايت
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>تاريخ الرفع:</strong> {{ document.uploaded_at.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="file" class="form-label">تحميل ملف جديد (اختياري)</label>
+                        <input type="file" class="form-control" id="file" name="file">
+                        <div class="form-text">اترك هذا الحقل فارغًا إذا كنت لا ترغب في تغيير الملف. الملفات المسموح بها: PDF, DOC, DOCX, JPG, JPEG, PNG (الحد الأقصى: 16 ميجابايت)</div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                        <a href="{{ url_for('documents.view_document', document_id=document.id) }}" class="btn btn-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

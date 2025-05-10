@@ -1,0 +1,118 @@
+{% extends "layout/base.html" %}
+
+{% block title %}المواعيد - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>المواعيد والجلسات</h1>
+    <div>
+        <a href="{{ url_for('appointments.calendar') }}" class="btn btn-info me-2">
+            <i class="fas fa-calendar-alt"></i> عرض التقويم
+        </a>
+        <a href="{{ url_for('appointments.add_appointment') }}" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> إضافة موعد جديد
+        </a>
+    </div>
+</div>
+
+<!-- فلتر الحالة -->
+<div class="mb-4">
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('appointments.index') }}" class="btn btn-outline-primary active">الكل</a>
+        <a href="{{ url_for('appointments.index', status='scheduled') }}" class="btn btn-outline-warning">مجدولة</a>
+        <a href="{{ url_for('appointments.index', status='completed') }}" class="btn btn-outline-success">مكتملة</a>
+        <a href="{{ url_for('appointments.index', status='cancelled') }}" class="btn btn-outline-danger">ملغاة</a>
+        <a href="{{ url_for('appointments.index', status='postponed') }}" class="btn btn-outline-secondary">مؤجلة</a>
+    </div>
+</div>
+
+<!-- فلتر النوع -->
+<div class="mb-4">
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('appointments.index') }}" class="btn btn-outline-primary active">الكل</a>
+        <a href="{{ url_for('appointments.index', type='hearing') }}" class="btn btn-outline-primary">جلسات</a>
+        <a href="{{ url_for('appointments.index', type='meeting') }}" class="btn btn-outline-info">اجتماعات</a>
+        <a href="{{ url_for('appointments.index', type='reminder') }}" class="btn btn-outline-secondary">تذكيرات</a>
+    </div>
+</div>
+
+{% if appointments %}
+<div class="table-responsive">
+    <table class="table table-hover table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>العنوان</th>
+                <th>التاريخ</th>
+                <th>الوقت</th>
+                <th>المكان</th>
+                <th>القضية</th>
+                <th>النوع</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for appointment in appointments %}
+            <tr>
+                <td>{{ appointment.title }}</td>
+                <td>{{ appointment.date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ appointment.date.strftime('%H:%M') }}</td>
+                <td>{{ appointment.location or '-' }}</td>
+                <td>
+                    {% if appointment.case %}
+                    <a href="{{ url_for('cases.view_case', case_id=appointment.case.id) }}">
+                        {{ appointment.case.case_number }}
+                    </a>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if appointment.appointment_type == 'hearing' %}
+                    <span class="badge bg-primary">جلسة</span>
+                    {% elif appointment.appointment_type == 'meeting' %}
+                    <span class="badge bg-info">اجتماع</span>
+                    {% else %}
+                    <span class="badge bg-secondary">تذكير</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if appointment.status == 'scheduled' %}
+                    <span class="badge bg-warning">مجدول</span>
+                    {% elif appointment.status == 'completed' %}
+                    <span class="badge bg-success">مكتمل</span>
+                    {% elif appointment.status == 'cancelled' %}
+                    <span class="badge bg-danger">ملغي</span>
+                    {% elif appointment.status == 'postponed' %}
+                    <span class="badge bg-secondary">مؤجل</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('appointments.view_appointment', appointment_id=appointment.id) }}" class="btn btn-sm btn-info" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ url_for('appointments.edit_appointment', appointment_id=appointment.id) }}" class="btn btn-sm btn-warning" title="تعديل">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-danger btn-delete" title="حذف"
+                                onclick="if(confirm('هل أنت متأكد من رغبتك في حذف هذا الموعد؟')) {
+                                    document.getElementById('delete-form-{{ appointment.id }}').submit();
+                                }">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <form id="delete-form-{{ appointment.id }}" action="{{ url_for('appointments.delete_appointment', appointment_id=appointment.id) }}" method="POST" style="display: none;">
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> لا توجد مواعيد متاحة.
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "layout/base.html" %}
+
+{% block title %}نتائج البحث - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>نتائج البحث: "{{ query }}"</h1>
+    <a href="{{ url_for('clients.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> العودة
+    </a>
+</div>
+
+{% if clients %}
+<div class="table-responsive">
+    <table class="table table-hover table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>الاسم</th>
+                <th>رقم الهوية</th>
+                <th>البريد الإلكتروني</th>
+                <th>رقم الهاتف</th>
+                <th>العنوان</th>
+                <th>عدد القضايا</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr>
+                <td>{{ client.first_name }} {{ client.last_name }}</td>
+                <td>{{ client.id_number or 'غير متوفر' }}</td>
+                <td>{{ client.email or 'غير متوفر' }}</td>
+                <td>{{ client.phone }}</td>
+                <td>{{ client.address or 'غير متوفر' }}</td>
+                <td><span class="badge bg-primary">{{ client.cases|length }}</span></td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('clients.view_client', client_id=client.id) }}" class="btn btn-sm btn-info" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ url_for('clients.edit_client', client_id=client.id) }}" class="btn btn-sm btn-warning" title="تعديل">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% if session.role == 'admin' %}
+                        <button type="button" class="btn btn-sm btn-danger btn-delete" title="حذف" 
+                                onclick="if(confirm('هل أنت متأكد من رغبتك في حذف هذا العميل؟')) { 
+                                    document.getElementById('delete-form-{{ client.id }}').submit(); 
+                                }">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <form id="delete-form-{{ client.id }}" action="{{ url_for('clients.delete_client', client_id=client.id) }}" method="POST" style="display: none;">
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> لا توجد نتائج مطابقة لـ "{{ query }}".
+</div>
+{% endif %}
+{% endblock %}

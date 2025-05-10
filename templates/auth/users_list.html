@@ -1,0 +1,71 @@
+{% extends "layout/base.html" %}
+
+{% block title %}المستخدمين - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>المستخدمين</h1>
+    <a href="{{ url_for('auth.add_user') }}" class="btn btn-primary">
+        <i class="fas fa-plus-circle"></i> إضافة مستخدم جديد
+    </a>
+</div>
+
+{% if users %}
+<div class="table-responsive">
+    <table class="table table-hover table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>اسم المستخدم</th>
+                <th>الاسم الكامل</th>
+                <th>البريد الإلكتروني</th>
+                <th>الدور</th>
+                <th>الحالة</th>
+                <th>تاريخ الإنشاء</th>
+                <th>آخر تسجيل دخول</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.first_name }} {{ user.last_name }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                    {% if user.role == 'admin' %}
+                    <span class="badge bg-danger">مسؤول</span>
+                    {% elif user.role == 'lawyer' %}
+                    <span class="badge bg-primary">محامي</span>
+                    {% else %}
+                    <span class="badge bg-secondary">موظف</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user.is_active %}
+                    <span class="badge bg-success">نشط</span>
+                    {% else %}
+                    <span class="badge bg-danger">غير نشط</span>
+                    {% endif %}
+                </td>
+                <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'لم يسجل الدخول بعد' }}</td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('auth.edit_user', user_id=user.id) }}" class="btn btn-sm btn-warning" title="تعديل">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> لا يوجد مستخدمين.
+</div>
+{% endif %}
+{% endblock %}

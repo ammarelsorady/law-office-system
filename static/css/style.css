@@ -1,0 +1,145 @@
+/* ملف CSS مخصص */
+
+/* الخط العربي */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
+
+body {
+    font-family: 'Tajawal', sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* تنسيق القائمة الجانبية */
+.nav-link {
+    color: #adb5bd;
+}
+
+.nav-link:hover {
+    color: #fff;
+}
+
+.nav-link.active {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+/* تنسيق البطاقات */
+.card {
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+    font-weight: 500;
+}
+
+/* تنسيق الأزرار */
+.btn {
+    border-radius: 0.25rem;
+}
+
+/* تنسيق الجداول */
+.table th {
+    font-weight: 600;
+}
+
+/* تنسيق النماذج */
+.form-label {
+    font-weight: 500;
+}
+
+.form-control {
+    border-radius: 0.25rem;
+}
+
+/* تنسيق شريط البحث */
+.search-form {
+    margin-bottom: 1.5rem;
+}
+
+/* تنسيق الشارات */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* تنسيق صفحة تسجيل الدخول */
+.login-container {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* تنسيق لوحة التحكم */
+.dashboard-card {
+    transition: transform 0.3s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+}
+
+/* تنسيق صفحة التقويم */
+.fc-event {
+    cursor: pointer;
+}
+
+/* تنسيق صفحة عرض المستند */
+.document-preview {
+    max-height: 500px;
+    overflow: auto;
+    border: 1px solid #dee2e6;
+    padding: 1rem;
+    border-radius: 0.25rem;
+}
+
+/* تنسيق الصور المصغرة */
+.thumbnail {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 0.25rem;
+}
+
+/* تنسيق الرسائل */
+.alert {
+    border-radius: 0.25rem;
+}
+
+/* تنسيق الصفحات */
+.pagination .page-link {
+    color: #0d6efd;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* تنسيق الأيقونات */
+.icon-lg {
+    font-size: 2rem;
+}
+
+/* تنسيق الملف الشخصي */
+.profile-header {
+    background-color: #0d6efd;
+    color: #fff;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-radius: 0.5rem;
+}
+
+/* تنسيق للطباعة */
+@media print {
+    .sidebar, .navbar, .btn, .no-print {
+        display: none !important;
+    }
+    
+    .container {
+        width: 100%;
+        max-width: 100%;
+    }
+}

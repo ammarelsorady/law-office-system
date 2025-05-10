@@ -1,0 +1,228 @@
+{% extends "layout/base.html" %}
+
+{% block title %}عرض الفاتورة - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>تفاصيل الفاتورة: {{ invoice.invoice_number }}</h1>
+    <div>
+        <a href="{{ url_for('invoices.edit_invoice', invoice_id=invoice.id) }}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> تعديل
+        </a>
+        <button class="btn btn-primary btn-print">
+            <i class="fas fa-print"></i> طباعة
+        </button>
+        <a href="{{ url_for('invoices.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> العودة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">معلومات الفاتورة</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">رقم الفاتورة:</div>
+                    <div class="col-md-8">{{ invoice.invoice_number }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">العميل:</div>
+                    <div class="col-md-8">
+                        <a href="{{ url_for('clients.view_client', client_id=invoice.client.id) }}">
+                            {{ invoice.client.first_name }} {{ invoice.client.last_name }}
+                        </a>
+                    </div>
+                </div>
+                {% if invoice.case %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">القضية:</div>
+                    <div class="col-md-8">
+                        <a href="{{ url_for('cases.view_case', case_id=invoice.case.id) }}">
+                            {{ invoice.case.case_number }} - {{ invoice.case.title }}
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">المبلغ:</div>
+                    <div class="col-md-8">{{ "%.2f"|format(invoice.amount) }} دينار</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">المبلغ المدفوع:</div>
+                    <div class="col-md-8">{{ "%.2f"|format(paid_amount) }} دينار</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">المبلغ المتبقي:</div>
+                    <div class="col-md-8">{{ "%.2f"|format(remaining_amount) }} دينار</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">تاريخ الإصدار:</div>
+                    <div class="col-md-8">{{ invoice.issue_date.strftime('%Y-%m-%d') }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">تاريخ الاستحقاق:</div>
+                    <div class="col-md-8">{{ invoice.due_date.strftime('%Y-%m-%d') }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">الحالة:</div>
+                    <div class="col-md-8">
+                        {% if invoice.status == 'paid' %}
+                        <span class="badge bg-success">مدفوعة</span>
+                        {% elif invoice.status == 'unpaid' %}
+                        <span class="badge bg-danger">غير مدفوعة</span>
+                        {% elif invoice.status == 'partial' %}
+                        <span class="badge bg-warning">مدفوعة جزئياً</span>
+                        {% elif invoice.status == 'cancelled' %}
+                        <span class="badge bg-secondary">ملغاة</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if invoice.description %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">الوصف:</div>
+                    <div class="col-md-8">{{ invoice.description }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- المدفوعات -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">المدفوعات</h5>
+                {% if invoice.status != 'paid' and invoice.status != 'cancelled' %}
+                <a href="{{ url_for('invoices.add_payment', invoice_id=invoice.id) }}" class="btn btn-sm btn-light">
+                    <i class="fas fa-plus"></i> إضافة دفعة
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if invoice.payments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>المبلغ</th>
+                                <th>تاريخ الدفع</th>
+                                <th>طريقة الدفع</th>
+                                <th>رقم المرجع</th>
+                                <th>المستلم</th>
+                                <th>ملاحظات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in invoice.payments %}
+                            <tr>
+                                <td>{{ "%.2f"|format(payment.amount) }} دينار</td>
+                                <td>{{ payment.payment_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if payment.payment_method == 'cash' %}
+                                    نقداً
+                                    {% elif payment.payment_method == 'bank_transfer' %}
+                                    تحويل بنكي
+                                    {% elif payment.payment_method == 'credit_card' %}
+                                    بطاقة ائتمان
+                                    {% else %}
+                                    {{ payment.payment_method }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ payment.reference_number or '-' }}</td>
+                                <td>{{ payment.received_by_user.first_name }} {{ payment.received_by_user.last_name }}</td>
+                                <td>{{ payment.notes or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">لا توجد مدفوعات مسجلة.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- معلومات العميل -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">معلومات العميل</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <img src="https://ui-avatars.com/api/?name={{ invoice.client.first_name }}+{{ invoice.client.last_name }}&size=100&background=random" alt="صورة العميل" class="rounded-circle">
+                </div>
+                <h5 class="text-center mb-3">{{ invoice.client.first_name }} {{ invoice.client.last_name }}</h5>
+                <div class="mb-2">
+                    <i class="fas fa-id-card me-2"></i> {{ invoice.client.id_number or 'غير متوفر' }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-envelope me-2"></i> {{ invoice.client.email or 'غير متوفر' }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-phone me-2"></i> {{ invoice.client.phone }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-map-marker-alt me-2"></i> {{ invoice.client.address or 'غير متوفر' }}
+                </div>
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{{ url_for('clients.view_client', client_id=invoice.client.id) }}" class="btn btn-primary">
+                        <i class="fas fa-user"></i> عرض ملف العميل
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- إحصائيات الفاتورة -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">إحصائيات الفاتورة</h5>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-3" style="height: 25px;">
+                    {% set percentage = (paid_amount / invoice.amount) * 100 if invoice.amount > 0 else 0 %}
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ percentage }}%;" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">{{ "%.0f"|format(percentage) }}%</div>
+                </div>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h6>المبلغ الكلي</h6>
+                        <h4>{{ "%.2f"|format(invoice.amount) }} دينار</h4>
+                    </div>
+                    <div class="col-6">
+                        <h6>المبلغ المدفوع</h6>
+                        <h4>{{ "%.2f"|format(paid_amount) }} دينار</h4>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h6>المبلغ المتبقي</h6>
+                        <h4>{{ "%.2f"|format(remaining_amount) }} دينار</h4>
+                    </div>
+                    <div class="col-6">
+                        <h6>عدد الدفعات</h6>
+                        <h4>{{ invoice.payments|length }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // طباعة الفاتورة
+        const printButton = document.querySelector('.btn-print');
+        if (printButton) {
+            printButton.addEventListener('click', function() {
+                window.print();
+            });
+        }
+    });
+</script>
+{% endblock %}

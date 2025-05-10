@@ -1,0 +1,181 @@
+{% extends "layout/base.html" %}
+
+{% block title %}التقارير - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>التقارير</h1>
+</div>
+
+<div class="row">
+    <!-- تقرير القضايا -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">تقارير القضايا</h5>
+            </div>
+            <div class="card-body">
+                <p>عرض تقارير مفصلة عن القضايا حسب النوع والحالة والمحكمة.</p>
+                <div class="list-group mt-3">
+                    <a href="{{ url_for('reports.cases_by_status') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-chart-pie me-2"></i> القضايا حسب الحالة
+                    </a>
+                    <a href="{{ url_for('reports.cases_by_type') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-chart-bar me-2"></i> القضايا حسب النوع
+                    </a>
+                    <a href="{{ url_for('reports.cases_by_court') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-chart-line me-2"></i> القضايا حسب المحكمة
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('reports.cases_summary') }}" class="btn btn-primary w-100">
+                    <i class="fas fa-file-alt"></i> تقرير شامل للقضايا
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- تقرير المالية -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">التقارير المالية</h5>
+            </div>
+            <div class="card-body">
+                <p>عرض تقارير مالية مفصلة عن الفواتير والمدفوعات والإيرادات.</p>
+                <div class="list-group mt-3">
+                    <a href="{{ url_for('reports.invoices_summary') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-invoice-dollar me-2"></i> ملخص الفواتير
+                    </a>
+                    <a href="{{ url_for('reports.payments_summary') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-money-bill-wave me-2"></i> ملخص المدفوعات
+                    </a>
+                    <a href="{{ url_for('reports.revenue_by_month') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-chart-line me-2"></i> الإيرادات الشهرية
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('reports.financial_summary') }}" class="btn btn-success w-100">
+                    <i class="fas fa-file-alt"></i> التقرير المالي الشامل
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- تقرير العملاء -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">تقارير العملاء</h5>
+            </div>
+            <div class="card-body">
+                <p>عرض تقارير مفصلة عن العملاء ونشاطهم وقضاياهم.</p>
+                <div class="list-group mt-3">
+                    <a href="{{ url_for('reports.clients_activity') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-users me-2"></i> نشاط العملاء
+                    </a>
+                    <a href="{{ url_for('reports.top_clients') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-trophy me-2"></i> أفضل العملاء
+                    </a>
+                    <a href="{{ url_for('reports.new_clients') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-plus me-2"></i> العملاء الجدد
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('reports.clients_summary') }}" class="btn btn-info w-100">
+                    <i class="fas fa-file-alt"></i> تقرير شامل للعملاء
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- تقرير المواعيد -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">تقارير المواعيد</h5>
+            </div>
+            <div class="card-body">
+                <p>عرض تقارير مفصلة عن المواعيد والجلسات.</p>
+                <div class="list-group mt-3">
+                    <a href="{{ url_for('reports.appointments_by_type') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar-alt me-2"></i> المواعيد حسب النوع
+                    </a>
+                    <a href="{{ url_for('reports.appointments_by_status') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar-check me-2"></i> المواعيد حسب الحالة
+                    </a>
+                    <a href="{{ url_for('reports.upcoming_appointments') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar-day me-2"></i> المواعيد القادمة
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('reports.appointments_summary') }}" class="btn btn-warning w-100">
+                    <i class="fas fa-file-alt"></i> تقرير شامل للمواعيد
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- تقرير المستندات -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">تقارير المستندات</h5>
+            </div>
+            <div class="card-body">
+                <p>عرض تقارير مفصلة عن المستندات وأنواعها.</p>
+                <div class="list-group mt-3">
+                    <a href="{{ url_for('reports.documents_by_type') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file me-2"></i> المستندات حسب النوع
+                    </a>
+                    <a href="{{ url_for('reports.documents_by_case') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-folder me-2"></i> المستندات حسب القضية
+                    </a>
+                    <a href="{{ url_for('reports.recent_documents') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-upload me-2"></i> المستندات الحديثة
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('reports.documents_summary') }}" class="btn btn-secondary w-100">
+                    <i class="fas fa-file-alt"></i> تقرير شامل للمستندات
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- تقرير الأداء -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">تقارير الأداء</h5>
+            </div>
+            <div class="card-body">
+                <p>عرض تقارير مفصلة عن أداء المكتب والمحامين.</p>
+                <div class="list-group mt-3">
+                    <a href="{{ url_for('reports.lawyers_performance') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-tie me-2"></i> أداء المحامين
+                    </a>
+                    <a href="{{ url_for('reports.cases_success_rate') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-chart-line me-2"></i> معدل نجاح القضايا
+                    </a>
+                    <a href="{{ url_for('reports.office_performance') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-building me-2"></i> أداء المكتب
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('reports.performance_summary') }}" class="btn btn-danger w-100">
+                    <i class="fas fa-file-alt"></i> تقرير شامل للأداء
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

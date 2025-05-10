@@ -1,0 +1,61 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}أنشطة المستخدم{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">أنشطة المستخدم #{{ user_id }}</h3>
+                    <div class="card-tools">
+                        <a href="{{ url_for('activity_log.index') }}" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-arrow-right ml-1"></i> العودة إلى سجل الأنشطة
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- جدول الأنشطة -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ والوقت</th>
+                                    <th>النشاط</th>
+                                    <th>الكيان</th>
+                                    <th>التفاصيل</th>
+                                    <th>عنوان IP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in activities %}
+                                <tr>
+                                    <td>{{ activity.timestamp|replace('T', ' ')|replace('Z', '') }}</td>
+                                    <td>{{ activity.activity_name }}</td>
+                                    <td>
+                                        {% if activity.entity_id %}
+                                        <a href="{{ url_for('activity_log.entity_activities', entity_type=activity.entity_type, entity_id=activity.entity_id) }}">
+                                            {{ activity.entity_name }} #{{ activity.entity_id }}
+                                        </a>
+                                        {% else %}
+                                        {{ activity.entity_name }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ activity.details }}</td>
+                                    <td>{{ activity.ip_address }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">لا توجد أنشطة مسجلة لهذا المستخدم</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

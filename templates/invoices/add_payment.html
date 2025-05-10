@@ -1,0 +1,97 @@
+{% extends "layout/base.html" %}
+
+{% block title %}إضافة دفعة - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">إضافة دفعة للفاتورة: {{ invoice.invoice_number }}</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>العميل:</strong> {{ invoice.client.first_name }} {{ invoice.client.last_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>المبلغ الكلي:</strong> {{ "%.2f"|format(invoice.amount) }} دينار
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <strong>المبلغ المتبقي:</strong> <span id="remaining_amount" data-value="{{ remaining_amount }}">{{ "%.2f"|format(remaining_amount) }}</span> دينار
+                        </div>
+                        <div class="col-md-6">
+                            <strong>الحالة:</strong>
+                            {% if invoice.status == 'paid' %}
+                            <span class="badge bg-success">مدفوعة</span>
+                            {% elif invoice.status == 'unpaid' %}
+                            <span class="badge bg-danger">غير مدفوعة</span>
+                            {% elif invoice.status == 'partial' %}
+                            <span class="badge bg-warning">مدفوعة جزئياً</span>
+                            {% elif invoice.status == 'cancelled' %}
+                            <span class="badge bg-secondary">ملغاة</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('invoices.add_payment', invoice_id=invoice.id) }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="amount" class="form-label">المبلغ</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0" max="{{ remaining_amount }}" value="{{ remaining_amount }}" required>
+                                <span class="input-group-text">دينار</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="payment_method" class="form-label">طريقة الدفع</label>
+                            <select class="form-select" id="payment_method" name="payment_method" required>
+                                <option value="cash" selected>نقداً</option>
+                                <option value="bank_transfer">تحويل بنكي</option>
+                                <option value="credit_card">بطاقة ائتمان</option>
+                                <option value="other">أخرى</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reference_number" class="form-label">رقم المرجع (اختياري)</label>
+                        <input type="text" class="form-control" id="reference_number" name="reference_number">
+                        <div class="form-text">رقم الشيك أو رقم التحويل البنكي أو رقم المعاملة</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">ملاحظات (اختياري)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">تسجيل الدفعة</button>
+                        <a href="{{ url_for('invoices.view_invoice', invoice_id=invoice.id) }}" class="btn btn-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const amountInput = document.getElementById('amount');
+        const remainingAmountElement = document.getElementById('remaining_amount');
+        const remainingAmount = parseFloat(remainingAmountElement.dataset.value);
+
+        amountInput.addEventListener('input', function() {
+            const enteredAmount = parseFloat(this.value) || 0;
+
+            if (enteredAmount > remainingAmount) {
+                this.value = remainingAmount;
+                alert('المبلغ المدخل يتجاوز المبلغ المتبقي!');
+            }
+        });
+    });
+</script>
+{% endblock %}

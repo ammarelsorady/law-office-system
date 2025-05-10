@@ -1,0 +1,167 @@
+{% extends "layout/base.html" %}
+
+{% block title %}عرض المستند - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>تفاصيل المستند: {{ document.title }}</h1>
+    <div>
+        <a href="{{ url_for('documents.download_document', document_id=document.id) }}" class="btn btn-success">
+            <i class="fas fa-download"></i> تنزيل
+        </a>
+        <a href="{{ url_for('documents.edit_document', document_id=document.id) }}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> تعديل
+        </a>
+        <a href="{{ url_for('documents.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> العودة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">معلومات المستند</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">العنوان:</div>
+                    <div class="col-md-8">{{ document.title }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">نوع المستند:</div>
+                    <div class="col-md-8">
+                        <span class="badge {% if document.document_type == 'contract' %}bg-success{% elif document.document_type == 'court_document' %}bg-danger{% elif document.document_type == 'id' %}bg-info{% elif document.document_type == 'power_of_attorney' %}bg-warning{% elif document.document_type == 'report' %}bg-secondary{% else %}bg-dark{% endif %}">
+                            {% if document.document_type == 'contract' %}
+                            عقد
+                            {% elif document.document_type == 'court_document' %}
+                            مستند محكمة
+                            {% elif document.document_type == 'id' %}
+                            هوية
+                            {% elif document.document_type == 'power_of_attorney' %}
+                            توكيل
+                            {% elif document.document_type == 'report' %}
+                            تقرير
+                            {% else %}
+                            {{ document.document_type }}
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% if document.description %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">الوصف:</div>
+                    <div class="col-md-8">{{ document.description }}</div>
+                </div>
+                {% endif %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">تاريخ الرفع:</div>
+                    <div class="col-md-8">{{ document.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">نوع الملف:</div>
+                    <div class="col-md-8">{{ document.file_type }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">حجم الملف:</div>
+                    <div class="col-md-8">
+                        {% if document.file_size < 1024 %}
+                        {{ document.file_size }} بايت
+                        {% elif document.file_size < 1048576 %}
+                        {{ (document.file_size / 1024)|round(2) }} كيلوبايت
+                        {% else %}
+                        {{ (document.file_size / 1048576)|round(2) }} ميجابايت
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">تم الرفع بواسطة:</div>
+                    <div class="col-md-8">{{ document.uploaded_by }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- معاينة المستند -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">معاينة المستند</h5>
+            </div>
+            <div class="card-body">
+                {% if document.file_type.startswith('image/') %}
+                <img src="{{ url_for('documents.preview_document', document_id=document.id) }}" class="img-fluid" alt="{{ document.title }}">
+                {% elif document.file_type == 'application/pdf' %}
+                <div class="ratio ratio-16x9">
+                    <iframe src="{{ url_for('documents.preview_document', document_id=document.id) }}" allowfullscreen></iframe>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> لا يمكن معاينة هذا النوع من الملفات. يرجى تنزيل الملف لعرضه.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- القضايا المرتبطة -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">القضايا المرتبطة</h5>
+            </div>
+            <div class="card-body">
+                {% if document.cases %}
+                <div class="list-group">
+                    {% for case in document.cases %}
+                    <a href="{{ url_for('cases.view_case', case_id=case.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ case.case_number }}</h6>
+                            <small>
+                                {% if case.status == 'open' %}
+                                <span class="badge bg-success">مفتوحة</span>
+                                {% elif case.status == 'closed' %}
+                                <span class="badge bg-secondary">مغلقة</span>
+                                {% elif case.status == 'pending' %}
+                                <span class="badge bg-warning">معلقة</span>
+                                {% elif case.status == 'postponed' %}
+                                <span class="badge bg-info">مؤجلة</span>
+                                {% endif %}
+                            </small>
+                        </div>
+                        <p class="mb-1">{{ case.title }}</p>
+                        <small>{{ case.court }}</small>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">لا توجد قضايا مرتبطة بهذا المستند.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- العملاء المرتبطين -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">العملاء المرتبطين</h5>
+            </div>
+            <div class="card-body">
+                {% if document.clients %}
+                <div class="list-group">
+                    {% for client in document.clients %}
+                    <a href="{{ url_for('clients.view_client', client_id=client.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ client.first_name }} {{ client.last_name }}</h6>
+                        </div>
+                        <p class="mb-1">{{ client.phone }}</p>
+                        <small>{{ client.email or 'لا يوجد بريد إلكتروني' }}</small>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">لا يوجد عملاء مرتبطين بهذا المستند.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

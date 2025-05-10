@@ -1,0 +1,101 @@
+{% extends "layout/base.html" %}
+
+{% block title %}تعديل القضية - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">تعديل القضية: {{ case.case_number }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('cases.edit_case', case_id=case.id) }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="case_number" class="form-label">رقم القضية</label>
+                            <input type="text" class="form-control" id="case_number" value="{{ case.case_number }}" disabled>
+                            <div class="form-text text-muted">لا يمكن تغيير رقم القضية</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="title" class="form-label">عنوان القضية</label>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ case.title }}" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="case_type" class="form-label">نوع القضية</label>
+                            <select class="form-select" id="case_type" name="case_type" required>
+                                <option value="مدني" {% if case.case_type == 'مدني' %}selected{% endif %}>مدني</option>
+                                <option value="جنائي" {% if case.case_type == 'جنائي' %}selected{% endif %}>جنائي</option>
+                                <option value="تجاري" {% if case.case_type == 'تجاري' %}selected{% endif %}>تجاري</option>
+                                <option value="عمالي" {% if case.case_type == 'عمالي' %}selected{% endif %}>عمالي</option>
+                                <option value="أحوال شخصية" {% if case.case_type == 'أحوال شخصية' %}selected{% endif %}>أحوال شخصية</option>
+                                <option value="إداري" {% if case.case_type == 'إداري' %}selected{% endif %}>إداري</option>
+                                <option value="عقاري" {% if case.case_type == 'عقاري' %}selected{% endif %}>عقاري</option>
+                                <option value="آخر" {% if case.case_type == 'آخر' %}selected{% endif %}>آخر</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="court" class="form-label">المحكمة</label>
+                            <input type="text" class="form-control" id="court" name="court" value="{{ case.court }}">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        {% if session.role == 'admin' %}
+                        <div class="col-md-6">
+                            <label for="client_id" class="form-label">العميل</label>
+                            <select class="form-select" id="client_id" name="client_id" required>
+                                {% for client in clients %}
+                                <option value="{{ client.id }}" {% if client.id == case.client_id %}selected{% endif %}>{{ client.first_name }} {{ client.last_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="lawyer_id" class="form-label">المحامي المسؤول</label>
+                            <select class="form-select" id="lawyer_id" name="lawyer_id" required>
+                                {% for lawyer in lawyers %}
+                                <option value="{{ lawyer.id }}" {% if lawyer.id == case.lawyer_id %}selected{% endif %}>{{ lawyer.first_name }} {{ lawyer.last_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% else %}
+                        <div class="col-md-6">
+                            <label for="client_name" class="form-label">العميل</label>
+                            <input type="text" class="form-control" id="client_name" value="{{ case.client.first_name }} {{ case.client.last_name }}" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="lawyer_name" class="form-label">المحامي المسؤول</label>
+                            <input type="text" class="form-control" id="lawyer_name" value="{{ case.lawyer.first_name }} {{ case.lawyer.last_name }}" disabled>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="opponent_name" class="form-label">اسم الخصم</label>
+                            <input type="text" class="form-control" id="opponent_name" name="opponent_name" value="{{ case.opponent_name }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">حالة القضية</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="open" {% if case.status == 'open' %}selected{% endif %}>مفتوحة</option>
+                                <option value="pending" {% if case.status == 'pending' %}selected{% endif %}>معلقة</option>
+                                <option value="postponed" {% if case.status == 'postponed' %}selected{% endif %}>مؤجلة</option>
+                                <option value="closed" {% if case.status == 'closed' %}selected{% endif %}>مغلقة</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">وصف القضية</label>
+                        <textarea class="form-control" id="description" name="description" rows="5">{{ case.description }}</textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                        <a href="{{ url_for('cases.view_case', case_id=case.id) }}" class="btn btn-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

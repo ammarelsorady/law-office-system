@@ -1,0 +1,55 @@
+{% extends "layout/base.html" %}
+
+{% block title %}تعديل العميل - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">تعديل العميل: {{ client.first_name }} {{ client.last_name }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('clients.edit_client', client_id=client.id) }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="first_name" class="form-label">الاسم الأول</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ client.first_name }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label">الاسم الأخير</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ client.last_name }}" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_number" class="form-label">رقم الهوية</label>
+                            <input type="text" class="form-control" id="id_number" name="id_number" value="{{ client.id_number or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">رقم الهاتف</label>
+                            <input type="text" class="form-control" id="phone" name="phone" value="{{ client.phone }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">البريد الإلكتروني</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ client.email or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">العنوان</label>
+                        <input type="text" class="form-control" id="address" name="address" value="{{ client.address or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">ملاحظات</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3">{{ client.notes or '' }}</textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                        <a href="{{ url_for('clients.view_client', client_id=client.id) }}" class="btn btn-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

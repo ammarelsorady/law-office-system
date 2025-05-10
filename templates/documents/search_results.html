@@ -1,0 +1,98 @@
+{% extends "layout/base.html" %}
+
+{% block title %}نتائج البحث - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>نتائج البحث: "{{ query }}"</h1>
+    <a href="{{ url_for('documents.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> العودة
+    </a>
+</div>
+
+{% if documents %}
+<div class="row">
+    {% for document in documents %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ document.title }}</h5>
+                <span class="badge {% if document.document_type == 'contract' %}bg-success{% elif document.document_type == 'court_document' %}bg-danger{% elif document.document_type == 'id' %}bg-info{% elif document.document_type == 'power_of_attorney' %}bg-warning{% elif document.document_type == 'report' %}bg-secondary{% else %}bg-dark{% endif %}">
+                    {% if document.document_type == 'contract' %}
+                    عقد
+                    {% elif document.document_type == 'court_document' %}
+                    مستند محكمة
+                    {% elif document.document_type == 'id' %}
+                    هوية
+                    {% elif document.document_type == 'power_of_attorney' %}
+                    توكيل
+                    {% elif document.document_type == 'report' %}
+                    تقرير
+                    {% else %}
+                    {{ document.document_type }}
+                    {% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                {% if document.description %}
+                <p class="card-text">{{ document.description }}</p>
+                {% else %}
+                <p class="card-text text-muted">لا يوجد وصف</p>
+                {% endif %}
+                
+                <div class="mb-2">
+                    <strong>تاريخ الرفع:</strong> {{ document.uploaded_at.strftime('%Y-%m-%d') }}
+                </div>
+                
+                <div class="mb-2">
+                    <strong>الحجم:</strong>
+                    {% if document.file_size < 1024 %}
+                    {{ document.file_size }} بايت
+                    {% elif document.file_size < 1048576 %}
+                    {{ (document.file_size / 1024)|round(2) }} كيلوبايت
+                    {% else %}
+                    {{ (document.file_size / 1048576)|round(2) }} ميجابايت
+                    {% endif %}
+                </div>
+                
+                {% if document.cases %}
+                <div class="mb-2">
+                    <strong>القضايا المرتبطة:</strong>
+                    {% for case in document.cases %}
+                    <a href="{{ url_for('cases.view_case', case_id=case.id) }}" class="badge bg-primary text-decoration-none">{{ case.case_number }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if document.clients %}
+                <div class="mb-2">
+                    <strong>العملاء المرتبطين:</strong>
+                    {% for client in document.clients %}
+                    <a href="{{ url_for('clients.view_client', client_id=client.id) }}" class="badge bg-secondary text-decoration-none">{{ client.first_name }} {{ client.last_name }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="btn-group w-100" role="group">
+                    <a href="{{ url_for('documents.view_document', document_id=document.id) }}" class="btn btn-sm btn-info" title="عرض">
+                        <i class="fas fa-eye"></i> عرض
+                    </a>
+                    <a href="{{ url_for('documents.download_document', document_id=document.id) }}" class="btn btn-sm btn-success" title="تنزيل">
+                        <i class="fas fa-download"></i> تنزيل
+                    </a>
+                    <a href="{{ url_for('documents.edit_document', document_id=document.id) }}" class="btn btn-sm btn-warning" title="تعديل">
+                        <i class="fas fa-edit"></i> تعديل
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> لا توجد نتائج مطابقة لـ "{{ query }}".
+</div>
+{% endif %}
+{% endblock %}

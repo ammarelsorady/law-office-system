@@ -1,0 +1,219 @@
+{% extends "layout/base.html" %}
+
+{% block title %}التقويم - {{ app_name }}{% endblock %}
+
+{% block styles %}
+<!-- FullCalendar CSS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<style>
+    #calendar {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+    
+    .fc-event {
+        cursor: pointer;
+    }
+    
+    .fc-day-today {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+    
+    .fc-header-toolbar {
+        margin-bottom: 1.5em !important;
+    }
+    
+    .fc-toolbar-title {
+        font-size: 1.5em !important;
+    }
+    
+    /* تعديل اتجاه التقويم للغة العربية */
+    .fc-direction-ltr {
+        direction: rtl !important;
+    }
+    
+    .fc-toolbar-chunk:first-child {
+        order: 3;
+    }
+    
+    .fc-toolbar-chunk:last-child {
+        order: 1;
+    }
+    
+    .fc-toolbar-chunk:nth-child(2) {
+        order: 2;
+    }
+    
+    .fc-toolbar {
+        display: flex !important;
+        flex-wrap: wrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>التقويم</h1>
+    <div>
+        <a href="{{ url_for('appointments.index') }}" class="btn btn-secondary me-2">
+            <i class="fas fa-list"></i> عرض قائمة المواعيد
+        </a>
+        <a href="{{ url_for('appointments.add_appointment') }}" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> إضافة موعد جديد
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+<!-- نافذة منبثقة لعرض تفاصيل الموعد -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalLabel">تفاصيل الموعد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <strong>العنوان:</strong>
+                    <p id="eventTitle"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>التاريخ والوقت:</strong>
+                    <p id="eventDateTime"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>المكان:</strong>
+                    <p id="eventLocation"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>النوع:</strong>
+                    <p id="eventType"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>الحالة:</strong>
+                    <p id="eventStatus"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" id="viewEventLink" class="btn btn-primary">عرض التفاصيل</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- FullCalendar JS -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+        
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'ar',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+            },
+            buttonText: {
+                today: 'اليوم',
+                month: 'شهر',
+                week: 'أسبوع',
+                day: 'يوم',
+                list: 'قائمة'
+            },
+            themeSystem: 'bootstrap5',
+            events: "{{ url_for('appointments.get_events') }}",
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            },
+            eventClick: function(info) {
+                document.getElementById('eventTitle').textContent = info.event.title;
+                
+                // تنسيق التاريخ والوقت
+                const startDate = new Date(info.event.start);
+                const endDate = info.event.end ? new Date(info.event.end) : null;
+                
+                const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
+                
+                let dateTimeStr = startDate.toLocaleDateString('ar-SA', dateOptions) + ' - ' + 
+                                 startDate.toLocaleTimeString('ar-SA', timeOptions);
+                
+                if (endDate) {
+                    dateTimeStr += ' إلى ' + endDate.toLocaleTimeString('ar-SA', timeOptions);
+                }
+                
+                document.getElementById('eventDateTime').textContent = dateTimeStr;
+                
+                // المكان
+                document.getElementById('eventLocation').textContent = info.event.extendedProps.location || 'غير محدد';
+                
+                // النوع
+                let typeText = 'غير محدد';
+                if (info.event.extendedProps.type === 'hearing') {
+                    typeText = 'جلسة';
+                } else if (info.event.extendedProps.type === 'meeting') {
+                    typeText = 'اجتماع';
+                } else if (info.event.extendedProps.type === 'reminder') {
+                    typeText = 'تذكير';
+                }
+                document.getElementById('eventType').textContent = typeText;
+                
+                // الحالة
+                let statusText = 'غير محدد';
+                let statusClass = '';
+                if (info.event.extendedProps.status === 'scheduled') {
+                    statusText = 'مجدول';
+                    statusClass = 'bg-warning';
+                } else if (info.event.extendedProps.status === 'completed') {
+                    statusText = 'مكتمل';
+                    statusClass = 'bg-success';
+                } else if (info.event.extendedProps.status === 'cancelled') {
+                    statusText = 'ملغي';
+                    statusClass = 'bg-danger';
+                } else if (info.event.extendedProps.status === 'postponed') {
+                    statusText = 'مؤجل';
+                    statusClass = 'bg-secondary';
+                }
+                
+                const statusElement = document.getElementById('eventStatus');
+                statusElement.textContent = '';
+                const badgeSpan = document.createElement('span');
+                badgeSpan.className = 'badge ' + statusClass;
+                badgeSpan.textContent = statusText;
+                statusElement.appendChild(badgeSpan);
+                
+                // رابط العرض
+                document.getElementById('viewEventLink').href = info.event.url;
+                
+                // منع الانتقال إلى صفحة التفاصيل عند النقر على الحدث
+                info.jsEvent.preventDefault();
+                
+                // عرض النافذة المنبثقة
+                eventModal.show();
+            },
+            dayMaxEvents: true, // عرض رابط "المزيد" عند وجود أحداث كثيرة
+            firstDay: 6, // السبت كأول يوم في الأسبوع
+            direction: 'rtl',
+            height: 'auto'
+        });
+        
+        calendar.render();
+    });
+</script>
+{% endblock %}

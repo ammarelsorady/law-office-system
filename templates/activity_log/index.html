@@ -1,0 +1,134 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}سجل الأنشطة{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">سجل الأنشطة</h3>
+                </div>
+                <div class="card-body">
+                    <!-- نموذج التصفية -->
+                    <form method="get" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="activity_type">نوع النشاط</label>
+                                    <select class="form-control" id="activity_type" name="activity_type">
+                                        <option value="">الكل</option>
+                                        <option value="LOGIN" {% if activity_type == 'LOGIN' %}selected{% endif %}>تسجيل دخول</option>
+                                        <option value="LOGOUT" {% if activity_type == 'LOGOUT' %}selected{% endif %}>تسجيل خروج</option>
+                                        <option value="CREATE" {% if activity_type == 'CREATE' %}selected{% endif %}>إنشاء</option>
+                                        <option value="UPDATE" {% if activity_type == 'UPDATE' %}selected{% endif %}>تحديث</option>
+                                        <option value="DELETE" {% if activity_type == 'DELETE' %}selected{% endif %}>حذف</option>
+                                        <option value="UPLOAD" {% if activity_type == 'UPLOAD' %}selected{% endif %}>رفع ملف</option>
+                                        <option value="DOWNLOAD" {% if activity_type == 'DOWNLOAD' %}selected{% endif %}>تنزيل ملف</option>
+                                        <option value="VIEW" {% if activity_type == 'VIEW' %}selected{% endif %}>عرض</option>
+                                        <option value="SEARCH" {% if activity_type == 'SEARCH' %}selected{% endif %}>بحث</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="entity_type">نوع الكيان</label>
+                                    <select class="form-control" id="entity_type" name="entity_type">
+                                        <option value="">الكل</option>
+                                        <option value="USER" {% if entity_type == 'USER' %}selected{% endif %}>مستخدم</option>
+                                        <option value="CLIENT" {% if entity_type == 'CLIENT' %}selected{% endif %}>عميل</option>
+                                        <option value="CASE" {% if entity_type == 'CASE' %}selected{% endif %}>قضية</option>
+                                        <option value="APPOINTMENT" {% if entity_type == 'APPOINTMENT' %}selected{% endif %}>موعد</option>
+                                        <option value="DOCUMENT" {% if entity_type == 'DOCUMENT' %}selected{% endif %}>مستند</option>
+                                        <option value="INVOICE" {% if entity_type == 'INVOICE' %}selected{% endif %}>فاتورة</option>
+                                        <option value="PAYMENT" {% if entity_type == 'PAYMENT' %}selected{% endif %}>دفعة</option>
+                                        <option value="SYSTEM" {% if entity_type == 'SYSTEM' %}selected{% endif %}>النظام</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="start_date">من تاريخ</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="end_date">إلى تاريخ</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="limit">عدد النتائج</label>
+                                    <select class="form-control" id="limit" name="limit">
+                                        <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+                                        <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
+                                        <option value="200" {% if limit == 200 %}selected{% endif %}>200</option>
+                                        <option value="500" {% if limit == 500 %}selected{% endif %}>500</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>&nbsp;</label>
+                                    <button type="submit" class="btn btn-primary btn-block">تصفية</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- جدول الأنشطة -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ والوقت</th>
+                                    <th>المستخدم</th>
+                                    <th>النشاط</th>
+                                    <th>الكيان</th>
+                                    <th>التفاصيل</th>
+                                    <th>عنوان IP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in activities %}
+                                <tr>
+                                    <td>{{ activity.timestamp|replace('T', ' ')|replace('Z', '') }}</td>
+                                    <td>
+                                        {% if activity.user_id %}
+                                        <a href="{{ url_for('activity_log.user_activities', user_id=activity.user_id) }}">
+                                            {{ activity.user_id }}
+                                        </a>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ activity.activity_name }}</td>
+                                    <td>
+                                        {% if activity.entity_id %}
+                                        <a href="{{ url_for('activity_log.entity_activities', entity_type=activity.entity_type, entity_id=activity.entity_id) }}">
+                                            {{ activity.entity_name }} #{{ activity.entity_id }}
+                                        </a>
+                                        {% else %}
+                                        {{ activity.entity_name }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ activity.details }}</td>
+                                    <td>{{ activity.ip_address }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center">لا توجد أنشطة مسجلة</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

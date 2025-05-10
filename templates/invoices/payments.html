@@ -1,0 +1,71 @@
+{% extends "layout/base.html" %}
+
+{% block title %}المدفوعات - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>المدفوعات</h1>
+    <a href="{{ url_for('invoices.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> العودة إلى الفواتير
+    </a>
+</div>
+
+{% if payments %}
+<div class="table-responsive">
+    <table class="table table-hover table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>رقم الفاتورة</th>
+                <th>العميل</th>
+                <th>المبلغ</th>
+                <th>تاريخ الدفع</th>
+                <th>طريقة الدفع</th>
+                <th>رقم المرجع</th>
+                <th>المستلم</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in payments %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('invoices.view_invoice', invoice_id=payment.invoice.id) }}">
+                        {{ payment.invoice.invoice_number }}
+                    </a>
+                </td>
+                <td>
+                    <a href="{{ url_for('clients.view_client', client_id=payment.invoice.client.id) }}">
+                        {{ payment.invoice.client.first_name }} {{ payment.invoice.client.last_name }}
+                    </a>
+                </td>
+                <td>{{ "%.2f"|format(payment.amount) }} دينار</td>
+                <td>{{ payment.payment_date.strftime('%Y-%m-%d') }}</td>
+                <td>
+                    {% if payment.payment_method == 'cash' %}
+                    نقداً
+                    {% elif payment.payment_method == 'bank_transfer' %}
+                    تحويل بنكي
+                    {% elif payment.payment_method == 'credit_card' %}
+                    بطاقة ائتمان
+                    {% else %}
+                    {{ payment.payment_method }}
+                    {% endif %}
+                </td>
+                <td>{{ payment.reference_number or '-' }}</td>
+                <td>{{ payment.received_by_user.first_name }} {{ payment.received_by_user.last_name }}</td>
+                <td>
+                    <a href="{{ url_for('invoices.view_invoice', invoice_id=payment.invoice.id) }}" class="btn btn-sm btn-info" title="عرض الفاتورة">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> لا توجد مدفوعات متاحة.
+</div>
+{% endif %}
+{% endblock %}

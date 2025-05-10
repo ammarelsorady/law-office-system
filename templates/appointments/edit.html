@@ -1,0 +1,137 @@
+{% extends "layout/base.html" %}
+
+{% block title %}تعديل الموعد - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">تعديل الموعد: {{ appointment.title }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('appointments.edit_appointment', appointment_id=appointment.id) }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="title" class="form-label">عنوان الموعد</label>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ appointment.title }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="appointment_type" class="form-label">نوع الموعد</label>
+                            <select class="form-select" id="appointment_type" name="appointment_type" required>
+                                <option value="hearing" {% if appointment.appointment_type == 'hearing' %}selected{% endif %}>جلسة</option>
+                                <option value="meeting" {% if appointment.appointment_type == 'meeting' %}selected{% endif %}>اجتماع</option>
+                                <option value="reminder" {% if appointment.appointment_type == 'reminder' %}selected{% endif %}>تذكير</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="date" class="form-label">التاريخ</label>
+                            <input type="date" class="form-control" id="date" name="date" value="{{ appointment.date.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="time" class="form-label">الوقت</label>
+                            <input type="time" class="form-control" id="time" name="time" value="{{ appointment.date.strftime('%H:%M') }}" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="end_date" class="form-label">تاريخ الانتهاء (اختياري)</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ appointment.end_date.strftime('%Y-%m-%d') if appointment.end_date else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="end_time" class="form-label">وقت الانتهاء (اختياري)</label>
+                            <input type="time" class="form-control" id="end_time" name="end_time" value="{{ appointment.end_date.strftime('%H:%M') if appointment.end_date else '' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="location" class="form-label">المكان</label>
+                        <input type="text" class="form-control" id="location" name="location" value="{{ appointment.location or '' }}">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="case_id" class="form-label">القضية</label>
+                            <select class="form-select" id="case_id" name="case_id">
+                                <option value="">بدون قضية</option>
+                                {% for case in cases %}
+                                <option value="{{ case.id }}" {% if appointment.case_id == case.id %}selected{% endif %}>{{ case.case_number }} - {{ case.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">الحالة</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="scheduled" {% if appointment.status == 'scheduled' %}selected{% endif %}>مجدول</option>
+                                <option value="completed" {% if appointment.status == 'completed' %}selected{% endif %}>مكتمل</option>
+                                <option value="cancelled" {% if appointment.status == 'cancelled' %}selected{% endif %}>ملغي</option>
+                                <option value="postponed" {% if appointment.status == 'postponed' %}selected{% endif %}>مؤجل</option>
+                            </select>
+                        </div>
+                    </div>
+                    {% if session.role == 'admin' %}
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label">المسؤول</label>
+                        <select class="form-select" id="user_id" name="user_id" required>
+                            {% for user in users %}
+                            <option value="{{ user.id }}" {% if appointment.user_id == user.id %}selected{% endif %}>{{ user.first_name }} {{ user.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label for="description" class="form-label">الوصف</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ appointment.description or '' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">ملاحظات</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3">{{ appointment.notes or '' }}</textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                        <a href="{{ url_for('appointments.view_appointment', appointment_id=appointment.id) }}" class="btn btn-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // التحقق من تاريخ ووقت الانتهاء
+        const dateInput = document.getElementById('date');
+        const timeInput = document.getElementById('time');
+        const endDateInput = document.getElementById('end_date');
+        const endTimeInput = document.getElementById('end_time');
+        
+        endDateInput.addEventListener('change', validateEndDateTime);
+        endTimeInput.addEventListener('change', validateEndDateTime);
+        dateInput.addEventListener('change', validateEndDateTime);
+        timeInput.addEventListener('change', validateEndDateTime);
+        
+        function validateEndDateTime() {
+            if (endDateInput.value && endTimeInput.value) {
+                const startDate = new Date(`${dateInput.value}T${timeInput.value}`);
+                const endDate = new Date(`${endDateInput.value}T${endTimeInput.value}`);
+                
+                if (endDate <= startDate) {
+                    alert('يجب أن يكون وقت الانتهاء بعد وقت البدء');
+                    endDateInput.value = dateInput.value;
+                    
+                    // تعيين وقت الانتهاء بعد ساعة من وقت البدء
+                    const newEndTime = new Date(startDate);
+                    newEndTime.setHours(newEndTime.getHours() + 1);
+                    
+                    const hours = String(newEndTime.getHours()).padStart(2, '0');
+                    const minutes = String(newEndTime.getMinutes()).padStart(2, '0');
+                    
+                    endTimeInput.value = `${hours}:${minutes}`;
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

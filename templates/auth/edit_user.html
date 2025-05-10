@@ -1,0 +1,92 @@
+{% extends "layout/base.html" %}
+
+{% block title %}تعديل المستخدم - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">تعديل المستخدم: {{ user.username }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('auth.edit_user', user_id=user.id) }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="first_name" class="form-label">الاسم الأول</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label">الاسم الأخير</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="username" class="form-label">اسم المستخدم</label>
+                        <input type="text" class="form-control" id="username" value="{{ user.username }}" disabled>
+                        <div class="form-text text-muted">لا يمكن تغيير اسم المستخدم</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">البريد الإلكتروني</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">رقم الهاتف</label>
+                        <input type="text" class="form-control" id="phone" name="phone" value="{{ user.phone }}">
+                    </div>
+                    
+                    {% if session.role == 'admin' %}
+                    <div class="mb-3">
+                        <label for="role" class="form-label">الدور</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="staff" {% if user.role == 'staff' %}selected{% endif %}>موظف</option>
+                            <option value="lawyer" {% if user.role == 'lawyer' %}selected{% endif %}>محامي</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>مسؤول</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="is_active" name="is_active" {% if user.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="is_active">نشط</label>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">كلمة المرور الجديدة</label>
+                        <input type="password" class="form-control" id="password" name="password">
+                        <div class="form-text text-muted">اتركها فارغة إذا كنت لا ترغب في تغيير كلمة المرور</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password_confirm" class="form-label">تأكيد كلمة المرور</label>
+                        <input type="password" class="form-control" id="password_confirm" name="password_confirm">
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                        {% if session.role == 'admin' %}
+                        <a href="{{ url_for('auth.users_list') }}" class="btn btn-secondary">إلغاء</a>
+                        {% else %}
+                        <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">إلغاء</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('password');
+        const passwordConfirmInput = document.getElementById('password_confirm');
+        const form = document.querySelector('form');
+        
+        form.addEventListener('submit', function(e) {
+            if (passwordInput.value && passwordInput.value !== passwordConfirmInput.value) {
+                e.preventDefault();
+                alert('كلمة المرور وتأكيدها غير متطابقين');
+            }
+        });
+    });
+</script>
+{% endblock %}

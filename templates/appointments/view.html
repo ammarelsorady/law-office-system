@@ -1,0 +1,159 @@
+{% extends "layout/base.html" %}
+
+{% block title %}عرض الموعد - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>تفاصيل الموعد: {{ appointment.title }}</h1>
+    <div>
+        <a href="{{ url_for('appointments.edit_appointment', appointment_id=appointment.id) }}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> تعديل
+        </a>
+        <a href="{{ url_for('appointments.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> العودة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">معلومات الموعد</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">العنوان:</div>
+                    <div class="col-md-8">{{ appointment.title }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">التاريخ والوقت:</div>
+                    <div class="col-md-8">{{ appointment.date.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+                {% if appointment.end_date %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">وقت الانتهاء:</div>
+                    <div class="col-md-8">{{ appointment.end_date.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+                {% endif %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">المكان:</div>
+                    <div class="col-md-8">{{ appointment.location or 'غير محدد' }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">نوع الموعد:</div>
+                    <div class="col-md-8">
+                        {% if appointment.appointment_type == 'hearing' %}
+                        <span class="badge bg-primary">جلسة</span>
+                        {% elif appointment.appointment_type == 'meeting' %}
+                        <span class="badge bg-info">اجتماع</span>
+                        {% else %}
+                        <span class="badge bg-secondary">تذكير</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">الحالة:</div>
+                    <div class="col-md-8">
+                        {% if appointment.status == 'scheduled' %}
+                        <span class="badge bg-warning">مجدول</span>
+                        {% elif appointment.status == 'completed' %}
+                        <span class="badge bg-success">مكتمل</span>
+                        {% elif appointment.status == 'cancelled' %}
+                        <span class="badge bg-danger">ملغي</span>
+                        {% elif appointment.status == 'postponed' %}
+                        <span class="badge bg-secondary">مؤجل</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if appointment.description %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">الوصف:</div>
+                    <div class="col-md-8">{{ appointment.description }}</div>
+                </div>
+                {% endif %}
+                {% if appointment.notes %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">ملاحظات:</div>
+                    <div class="col-md-8">{{ appointment.notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- معلومات القضية -->
+        {% if appointment.case %}
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">معلومات القضية</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>رقم القضية:</strong>
+                    <p>{{ appointment.case.case_number }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong>عنوان القضية:</strong>
+                    <p>{{ appointment.case.title }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong>المحكمة:</strong>
+                    <p>{{ appointment.case.court }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong>حالة القضية:</strong>
+                    <p>
+                        {% if appointment.case.status == 'open' %}
+                        <span class="badge bg-success">مفتوحة</span>
+                        {% elif appointment.case.status == 'closed' %}
+                        <span class="badge bg-secondary">مغلقة</span>
+                        {% elif appointment.case.status == 'pending' %}
+                        <span class="badge bg-warning">معلقة</span>
+                        {% elif appointment.case.status == 'postponed' %}
+                        <span class="badge bg-info">مؤجلة</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('cases.view_case', case_id=appointment.case.id) }}" class="btn btn-primary">
+                        <i class="fas fa-gavel"></i> عرض القضية
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- معلومات المسؤول -->
+        {% if appointment.user %}
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">المسؤول عن الموعد</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <img src="https://ui-avatars.com/api/?name={{ appointment.user.first_name }}+{{ appointment.user.last_name }}&size=100&background=random" alt="صورة المسؤول" class="rounded-circle">
+                </div>
+                <h5 class="text-center mb-3">{{ appointment.user.first_name }} {{ appointment.user.last_name }}</h5>
+                <div class="mb-2">
+                    <i class="fas fa-envelope me-2"></i> {{ appointment.user.email }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-phone me-2"></i> {{ appointment.user.phone or 'غير متوفر' }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">المسؤول عن الموعد</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">لا يوجد مسؤول محدد لهذا الموعد.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

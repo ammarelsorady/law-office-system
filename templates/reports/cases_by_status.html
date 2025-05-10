@@ -1,0 +1,332 @@
+{% extends "layout/base.html" %}
+
+{% block title %}تقرير القضايا حسب الحالة - {{ app_name }}{% endblock %}
+
+{% block styles %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+    
+    .stats-card {
+        border-right: 5px solid;
+        transition: transform 0.3s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stats-card.open {
+        border-right-color: #28a745;
+    }
+    
+    .stats-card.closed {
+        border-right-color: #6c757d;
+    }
+    
+    .stats-card.pending {
+        border-right-color: #ffc107;
+    }
+    
+    .stats-card.postponed {
+        border-right-color: #17a2b8;
+    }
+    
+    .stats-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .stats-card .stats-icon {
+        font-size: 2.5rem;
+        opacity: 0.3;
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+    }
+    
+    .stats-card .stats-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    
+    .stats-card .stats-text {
+        font-size: 1rem;
+        text-transform: uppercase;
+        margin-bottom: 0;
+    }
+    
+    .stats-card .stats-percentage {
+        font-size: 0.875rem;
+    }
+    
+    .table-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>تقرير القضايا حسب الحالة</h1>
+    <div>
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> العودة للتقارير
+        </a>
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> طباعة التقرير
+        </button>
+    </div>
+</div>
+
+<!-- بطاقات الإحصائيات -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card open">
+            <div class="card-body">
+                <i class="fas fa-folder-open stats-icon"></i>
+                <div class="stats-number">{{ open_cases }}</div>
+                <p class="stats-text">قضايا مفتوحة</p>
+                <div class="stats-percentage text-success">
+                    <i class="fas fa-percentage"></i> {{ "%.1f"|format(open_percentage) }}% من إجمالي القضايا
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card closed">
+            <div class="card-body">
+                <i class="fas fa-folder stats-icon"></i>
+                <div class="stats-number">{{ closed_cases }}</div>
+                <p class="stats-text">قضايا مغلقة</p>
+                <div class="stats-percentage text-secondary">
+                    <i class="fas fa-percentage"></i> {{ "%.1f"|format(closed_percentage) }}% من إجمالي القضايا
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card pending">
+            <div class="card-body">
+                <i class="fas fa-pause-circle stats-icon"></i>
+                <div class="stats-number">{{ pending_cases }}</div>
+                <p class="stats-text">قضايا معلقة</p>
+                <div class="stats-percentage text-warning">
+                    <i class="fas fa-percentage"></i> {{ "%.1f"|format(pending_percentage) }}% من إجمالي القضايا
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card postponed">
+            <div class="card-body">
+                <i class="fas fa-clock stats-icon"></i>
+                <div class="stats-number">{{ postponed_cases }}</div>
+                <p class="stats-text">قضايا مؤجلة</p>
+                <div class="stats-percentage text-info">
+                    <i class="fas fa-percentage"></i> {{ "%.1f"|format(postponed_percentage) }}% من إجمالي القضايا
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- الرسم البياني -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">توزيع القضايا حسب الحالة</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="casesStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- الرسم البياني الشريطي -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">توزيع القضايا حسب النوع والحالة</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="casesTypeStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- جدول القضايا -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">قائمة القضايا</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>رقم القضية</th>
+                        <th>العنوان</th>
+                        <th>العميل</th>
+                        <th>المحامي</th>
+                        <th>نوع القضية</th>
+                        <th>تاريخ الفتح</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in cases %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('cases.view_case', case_id=case.id) }}">
+                                {{ case.case_number }}
+                            </a>
+                        </td>
+                        <td>{{ case.title }}</td>
+                        <td>
+                            <a href="{{ url_for('clients.view_client', client_id=case.client.id) }}">
+                                {{ case.client.first_name }} {{ case.client.last_name }}
+                            </a>
+                        </td>
+                        <td>{{ case.lawyer.first_name }} {{ case.lawyer.last_name }}</td>
+                        <td>{{ case.case_type }}</td>
+                        <td>{{ case.opened_date.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            {% if case.status == 'open' %}
+                            <span class="badge bg-success">مفتوحة</span>
+                            {% elif case.status == 'closed' %}
+                            <span class="badge bg-secondary">مغلقة</span>
+                            {% elif case.status == 'pending' %}
+                            <span class="badge bg-warning">معلقة</span>
+                            {% elif case.status == 'postponed' %}
+                            <span class="badge bg-info">مؤجلة</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // بيانات الرسم البياني الدائري
+        const statusData = {
+            labels: ['مفتوحة', 'مغلقة', 'معلقة', 'مؤجلة'],
+            datasets: [{
+                data: [{{ open_cases }}, {{ closed_cases }}, {{ pending_cases }}, {{ postponed_cases }}],
+                backgroundColor: ['#28a745', '#6c757d', '#ffc107', '#17a2b8'],
+                borderWidth: 1
+            }]
+        };
+        
+        // إعدادات الرسم البياني الدائري
+        const statusConfig = {
+            type: 'pie',
+            data: statusData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        
+        // إنشاء الرسم البياني الدائري
+        const statusChart = new Chart(
+            document.getElementById('casesStatusChart'),
+            statusConfig
+        );
+        
+        // بيانات الرسم البياني الشريطي
+        const typeStatusData = {
+            labels: ['مدني', 'جنائي', 'تجاري', 'عمالي', 'أحوال شخصية', 'إداري', 'عقاري', 'آخر'],
+            datasets: [
+                {
+                    label: 'مفتوحة',
+                    data: [{{ type_status_data.open.civil }}, {{ type_status_data.open.criminal }}, {{ type_status_data.open.commercial }}, {{ type_status_data.open.labor }}, {{ type_status_data.open.personal }}, {{ type_status_data.open.administrative }}, {{ type_status_data.open.real_estate }}, {{ type_status_data.open.other }}],
+                    backgroundColor: '#28a745'
+                },
+                {
+                    label: 'مغلقة',
+                    data: [{{ type_status_data.closed.civil }}, {{ type_status_data.closed.criminal }}, {{ type_status_data.closed.commercial }}, {{ type_status_data.closed.labor }}, {{ type_status_data.closed.personal }}, {{ type_status_data.closed.administrative }}, {{ type_status_data.closed.real_estate }}, {{ type_status_data.closed.other }}],
+                    backgroundColor: '#6c757d'
+                },
+                {
+                    label: 'معلقة',
+                    data: [{{ type_status_data.pending.civil }}, {{ type_status_data.pending.criminal }}, {{ type_status_data.pending.commercial }}, {{ type_status_data.pending.labor }}, {{ type_status_data.pending.personal }}, {{ type_status_data.pending.administrative }}, {{ type_status_data.pending.real_estate }}, {{ type_status_data.pending.other }}],
+                    backgroundColor: '#ffc107'
+                },
+                {
+                    label: 'مؤجلة',
+                    data: [{{ type_status_data.postponed.civil }}, {{ type_status_data.postponed.criminal }}, {{ type_status_data.postponed.commercial }}, {{ type_status_data.postponed.labor }}, {{ type_status_data.postponed.personal }}, {{ type_status_data.postponed.administrative }}, {{ type_status_data.postponed.real_estate }}, {{ type_status_data.postponed.other }}],
+                    backgroundColor: '#17a2b8'
+                }
+            ]
+        };
+        
+        // إعدادات الرسم البياني الشريطي
+        const typeStatusConfig = {
+            type: 'bar',
+            data: typeStatusData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        };
+        
+        // إنشاء الرسم البياني الشريطي
+        const typeStatusChart = new Chart(
+            document.getElementById('casesTypeStatusChart'),
+            typeStatusConfig
+        );
+    });
+</script>
+{% endblock %}

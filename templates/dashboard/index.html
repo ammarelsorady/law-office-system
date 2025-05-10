@@ -1,0 +1,267 @@
+{% extends "layout/base.html" %}
+
+{% block title %}لوحة التحكم - {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">لوحة التحكم</h1>
+
+<!-- إحصائيات القضايا -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">إجمالي القضايا</h5>
+                        <h2 class="display-4">{{ total_cases }}</h2>
+                    </div>
+                    <i class="fas fa-gavel fa-3x"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{{ url_for('cases.index') }}" class="text-white text-decoration-none">عرض التفاصيل <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">القضايا المفتوحة</h5>
+                        <h2 class="display-4">{{ open_cases }}</h2>
+                    </div>
+                    <i class="fas fa-folder-open fa-3x"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{{ url_for('cases.index') }}" class="text-white text-decoration-none">عرض التفاصيل <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-secondary mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">القضايا المغلقة</h5>
+                        <h2 class="display-4">{{ closed_cases }}</h2>
+                    </div>
+                    <i class="fas fa-folder fa-3x"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{{ url_for('cases.index') }}" class="text-white text-decoration-none">عرض التفاصيل <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- إحصائيات مالية -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">إجمالي الفواتير</h5>
+                        <h2 class="display-4">{{ total_invoices }}</h2>
+                    </div>
+                    <i class="fas fa-file-invoice fa-3x"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{{ url_for('invoices.index') }}" class="text-white text-decoration-none">عرض التفاصيل <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">الفواتير غير المدفوعة</h5>
+                        <h2 class="display-4">{{ unpaid_invoices }}</h2>
+                    </div>
+                    <i class="fas fa-exclamation-circle fa-3x"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{{ url_for('invoices.index') }}" class="text-white text-decoration-none">عرض التفاصيل <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-danger mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">إجمالي العملاء</h5>
+                        <h2 class="display-4">{{ total_clients }}</h2>
+                    </div>
+                    <i class="fas fa-users fa-3x"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{{ url_for('clients.index') }}" class="text-white text-decoration-none">عرض التفاصيل <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- المواعيد القادمة -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar me-2"></i> المواعيد القادمة</h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming_appointments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>العنوان</th>
+                                <th>التاريخ</th>
+                                <th>النوع</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in upcoming_appointments %}
+                            <tr>
+                                <td><a href="{{ url_for('appointments.view_appointment', appointment_id=appointment.id) }}">{{ appointment.title }}</a></td>
+                                <td>{{ appointment.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    {% if appointment.appointment_type == 'hearing' %}
+                                    <span class="badge bg-primary">جلسة</span>
+                                    {% elif appointment.appointment_type == 'meeting' %}
+                                    <span class="badge bg-info">اجتماع</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">تذكير</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if appointment.status == 'scheduled' %}
+                                    <span class="badge bg-warning">مجدول</span>
+                                    {% elif appointment.status == 'completed' %}
+                                    <span class="badge bg-success">مكتمل</span>
+                                    {% elif appointment.status == 'cancelled' %}
+                                    <span class="badge bg-danger">ملغي</span>
+                                    {% elif appointment.status == 'postponed' %}
+                                    <span class="badge bg-secondary">مؤجل</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">لا توجد مواعيد قادمة.</p>
+                {% endif %}
+                <a href="{{ url_for('appointments.index') }}" class="btn btn-sm btn-primary">عرض جميع المواعيد</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- القضايا الأخيرة -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-gavel me-2"></i> القضايا الأخيرة</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_cases %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>رقم القضية</th>
+                                <th>العنوان</th>
+                                <th>العميل</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for case in recent_cases %}
+                            <tr>
+                                <td><a href="{{ url_for('cases.view_case', case_id=case.id) }}">{{ case.case_number }}</a></td>
+                                <td>{{ case.title }}</td>
+                                <td>{{ case.client.first_name }} {{ case.client.last_name }}</td>
+                                <td>
+                                    {% if case.status == 'open' %}
+                                    <span class="badge bg-success">مفتوحة</span>
+                                    {% elif case.status == 'closed' %}
+                                    <span class="badge bg-secondary">مغلقة</span>
+                                    {% elif case.status == 'pending' %}
+                                    <span class="badge bg-warning">معلقة</span>
+                                    {% elif case.status == 'postponed' %}
+                                    <span class="badge bg-info">مؤجلة</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">لا توجد قضايا حديثة.</p>
+                {% endif %}
+                <a href="{{ url_for('cases.index') }}" class="btn btn-sm btn-success">عرض جميع القضايا</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- إحصائيات إضافية للمسؤول -->
+{% if session.role == 'admin' %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i> إحصائيات مالية</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>إجمالي المبالغ</h6>
+                    <h3>{{ "%.2f"|format(total_amount) }} دينار</h3>
+                </div>
+                <div class="mb-3">
+                    <h6>إجمالي المدفوعات</h6>
+                    <h3>{{ "%.2f"|format(total_payments) }} دينار</h3>
+                </div>
+                <div>
+                    <h6>مدفوعات الشهر الحالي</h6>
+                    <h3>{{ "%.2f"|format(month_payments) }} دينار</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-user-shield me-2"></i> إحصائيات المستخدمين</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>إجمالي المستخدمين</h6>
+                    <h3>{{ total_users }}</h3>
+                </div>
+                <div class="mb-3">
+                    <h6>المحامين</h6>
+                    <h3>{{ total_lawyers }}</h3>
+                </div>
+                <div>
+                    <h6>الموظفين</h6>
+                    <h3>{{ total_staff }}</h3>
+                </div>
+                <a href="{{ url_for('auth.users_list') }}" class="btn btn-sm btn-info mt-3">إدارة المستخدمين</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

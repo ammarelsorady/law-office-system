@@ -1,0 +1,364 @@
+{% extends "layout/base.html" %}
+
+{% block title %}تقرير أداء المحامين - {{ app_name }}{% endblock %}
+
+{% block styles %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+    
+    .lawyer-card {
+        transition: transform 0.3s;
+    }
+    
+    .lawyer-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .lawyer-card .card-header {
+        padding: 0.5rem 1rem;
+    }
+    
+    .lawyer-card .lawyer-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        margin-right: 1rem;
+    }
+    
+    .lawyer-card .lawyer-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 1rem;
+    }
+    
+    .lawyer-card .lawyer-stat {
+        text-align: center;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .lawyer-card .lawyer-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    
+    .lawyer-card .lawyer-stat-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+    }
+    
+    .progress-thin {
+        height: 0.5rem;
+    }
+    
+    .table-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    @media print {
+        .no-print {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>تقرير أداء المحامين</h1>
+    <div class="no-print">
+        <div class="btn-group me-2">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="periodDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                {{ period_text }}
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="periodDropdown">
+                <li><a class="dropdown-item" href="{{ url_for('reports.lawyers_performance', period='month') }}">الشهر الحالي</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.lawyers_performance', period='quarter') }}">الربع الحالي</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.lawyers_performance', period='year') }}">السنة الحالية</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.lawyers_performance', period='all') }}">كل الفترات</a></li>
+            </ul>
+        </div>
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary me-2">
+            <i class="fas fa-arrow-left"></i> العودة للتقارير
+        </a>
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> طباعة التقرير
+        </button>
+    </div>
+</div>
+
+<!-- معلومات التقرير -->
+<div class="alert alert-info mb-4">
+    <div class="row">
+        <div class="col-md-4">
+            <strong>الفترة:</strong> {{ period_text }}
+        </div>
+        <div class="col-md-4">
+            <strong>تاريخ التقرير:</strong> {{ report_date.strftime('%Y-%m-%d') }}
+        </div>
+        <div class="col-md-4">
+            <strong>إجمالي القضايا:</strong> {{ total_cases }}
+        </div>
+    </div>
+</div>
+
+<!-- الرسوم البيانية -->
+<div class="row">
+    <!-- الرسم البياني لعدد القضايا لكل محامي -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">عدد القضايا لكل محامي</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="casesByLawyerChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- الرسم البياني لمعدل نجاح القضايا -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">معدل نجاح القضايا</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="successRateChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- بطاقات المحامين -->
+<h2 class="mb-3">أداء المحامين</h2>
+<div class="row">
+    {% for lawyer in lawyers %}
+    <div class="col-md-6 mb-4">
+        <div class="card lawyer-card">
+            <div class="card-header bg-primary text-white d-flex align-items-center">
+                <h5 class="mb-0">{{ lawyer.first_name }} {{ lawyer.last_name }}</h5>
+                <span class="ms-auto badge bg-light text-dark">{{ lawyer.role_display }}</span>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <img src="https://ui-avatars.com/api/?name={{ lawyer.first_name }}+{{ lawyer.last_name }}&size=80&background=random" alt="صورة المحامي" class="lawyer-avatar">
+                    <div>
+                        <p class="mb-1"><i class="fas fa-envelope me-2"></i> {{ lawyer.email }}</p>
+                        <p class="mb-1"><i class="fas fa-phone me-2"></i> {{ lawyer.phone or 'غير متوفر' }}</p>
+                        <p class="mb-0"><i class="fas fa-calendar-alt me-2"></i> تاريخ التعيين: {{ lawyer.created_at.strftime('%Y-%m-%d') }}</p>
+                    </div>
+                </div>
+                
+                <div class="lawyer-stats">
+                    <div class="lawyer-stat">
+                        <div class="lawyer-stat-value">{{ lawyer.stats.total_cases }}</div>
+                        <div class="lawyer-stat-label">إجمالي القضايا</div>
+                    </div>
+                    <div class="lawyer-stat">
+                        <div class="lawyer-stat-value">{{ lawyer.stats.active_cases }}</div>
+                        <div class="lawyer-stat-label">قضايا نشطة</div>
+                    </div>
+                    <div class="lawyer-stat">
+                        <div class="lawyer-stat-value">{{ lawyer.stats.closed_cases }}</div>
+                        <div class="lawyer-stat-label">قضايا مغلقة</div>
+                    </div>
+                    <div class="lawyer-stat">
+                        <div class="lawyer-stat-value">{{ "%.1f"|format(lawyer.stats.success_rate) }}%</div>
+                        <div class="lawyer-stat-label">معدل النجاح</div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <p class="mb-1"><strong>معدل النجاح:</strong></p>
+                    <div class="progress progress-thin mb-3">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ lawyer.stats.success_rate }}%;" aria-valuenow="{{ lawyer.stats.success_rate }}" aria-valuemin="0" aria-valuemax="100">{{ "%.1f"|format(lawyer.stats.success_rate) }}%</div>
+                    </div>
+                    
+                    <p class="mb-1"><strong>الإيرادات:</strong> {{ "%.2f"|format(lawyer.stats.revenue) }} دينار</p>
+                    <p class="mb-1"><strong>متوسط مدة القضايا:</strong> {{ lawyer.stats.avg_case_duration }} يوم</p>
+                    <p class="mb-0"><strong>عدد المواعيد:</strong> {{ lawyer.stats.appointments_count }}</p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('reports.lawyer_details', lawyer_id=lawyer.id) }}" class="btn btn-primary no-print">
+                    <i class="fas fa-chart-line"></i> عرض التفاصيل
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- جدول القضايا المغلقة حديثاً -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">القضايا المغلقة حديثاً</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>رقم القضية</th>
+                        <th>العنوان</th>
+                        <th>المحامي</th>
+                        <th>العميل</th>
+                        <th>تاريخ الفتح</th>
+                        <th>تاريخ الإغلاق</th>
+                        <th>المدة (أيام)</th>
+                        <th>النتيجة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in recent_closed_cases %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('cases.view_case', case_id=case.id) }}">
+                                {{ case.case_number }}
+                            </a>
+                        </td>
+                        <td>{{ case.title }}</td>
+                        <td>{{ case.lawyer.first_name }} {{ case.lawyer.last_name }}</td>
+                        <td>
+                            <a href="{{ url_for('clients.view_client', client_id=case.client.id) }}">
+                                {{ case.client.first_name }} {{ case.client.last_name }}
+                            </a>
+                        </td>
+                        <td>{{ case.opened_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ case.closed_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ case.duration_days }}</td>
+                        <td>
+                            {% if case.outcome == 'won' %}
+                            <span class="badge bg-success">ناجحة</span>
+                            {% elif case.outcome == 'lost' %}
+                            <span class="badge bg-danger">خاسرة</span>
+                            {% elif case.outcome == 'settled' %}
+                            <span class="badge bg-info">تسوية</span>
+                            {% else %}
+                            <span class="badge bg-secondary">غير محدد</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // بيانات الرسم البياني لعدد القضايا لكل محامي
+        const casesByLawyerData = {
+            labels: {{ lawyer_names|tojson }},
+            datasets: [
+                {
+                    label: 'قضايا نشطة',
+                    data: {{ active_cases_by_lawyer|tojson }},
+                    backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'قضايا مغلقة',
+                    data: {{ closed_cases_by_lawyer|tojson }},
+                    backgroundColor: 'rgba(108, 117, 125, 0.7)',
+                    borderColor: 'rgba(108, 117, 125, 1)',
+                    borderWidth: 1
+                }
+            ]
+        };
+        
+        // إعدادات الرسم البياني لعدد القضايا لكل محامي
+        const casesByLawyerConfig = {
+            type: 'bar',
+            data: casesByLawyerData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'عدد القضايا'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                }
+            }
+        };
+        
+        // إنشاء الرسم البياني لعدد القضايا لكل محامي
+        const casesByLawyerChart = new Chart(
+            document.getElementById('casesByLawyerChart'),
+            casesByLawyerConfig
+        );
+        
+        // بيانات الرسم البياني لمعدل نجاح القضايا
+        const successRateData = {
+            labels: {{ lawyer_names|tojson }},
+            datasets: [{
+                label: 'معدل النجاح (%)',
+                data: {{ success_rates|tojson }},
+                backgroundColor: 'rgba(0, 123, 255, 0.7)',
+                borderColor: 'rgba(0, 123, 255, 1)',
+                borderWidth: 1
+            }]
+        };
+        
+        // إعدادات الرسم البياني لمعدل نجاح القضايا
+        const successRateConfig = {
+            type: 'bar',
+            data: successRateData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'معدل النجاح (%)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        };
+        
+        // إنشاء الرسم البياني لمعدل نجاح القضايا
+        const successRateChart = new Chart(
+            document.getElementById('successRateChart'),
+            successRateConfig
+        );
+    });
+</script>
+{% endblock %}

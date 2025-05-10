@@ -1,0 +1,104 @@
+{% extends "layout/base.html" %}
+
+{% block title %}تعديل الفاتورة - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">تعديل الفاتورة: {{ invoice.invoice_number }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('invoices.edit_invoice', invoice_id=invoice.id) }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="invoice_number" class="form-label">رقم الفاتورة</label>
+                            <input type="text" class="form-control" id="invoice_number" value="{{ invoice.invoice_number }}" disabled>
+                            <div class="form-text text-muted">لا يمكن تغيير رقم الفاتورة</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="amount" class="form-label">المبلغ</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0" value="{{ "%.2f"|format(invoice.amount) }}" required>
+                                <span class="input-group-text">دينار</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="issue_date" class="form-label">تاريخ الإصدار</label>
+                            <input type="date" class="form-control" id="issue_date" name="issue_date" value="{{ invoice.issue_date.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="due_date" class="form-label">تاريخ الاستحقاق</label>
+                            <input type="date" class="form-control" id="due_date" name="due_date" value="{{ invoice.due_date.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                    </div>
+                    {% if session.role == 'admin' %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="client_id" class="form-label">العميل</label>
+                            <select class="form-select" id="client_id" name="client_id" required>
+                                {% for client in clients %}
+                                <option value="{{ client.id }}" {% if client.id == invoice.client_id %}selected{% endif %}>{{ client.first_name }} {{ client.last_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="case_id" class="form-label">القضية (اختياري)</label>
+                            <select class="form-select" id="case_id" name="case_id">
+                                <option value="">بدون قضية</option>
+                                {% for case in cases %}
+                                <option value="{{ case.id }}" {% if invoice.case_id == case.id %}selected{% endif %}>{{ case.case_number }} - {{ case.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label for="status" class="form-label">حالة الفاتورة</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="unpaid" {% if invoice.status == 'unpaid' %}selected{% endif %}>غير مدفوعة</option>
+                            <option value="paid" {% if invoice.status == 'paid' %}selected{% endif %}>مدفوعة</option>
+                            <option value="partial" {% if invoice.status == 'partial' %}selected{% endif %}>مدفوعة جزئياً</option>
+                            <option value="cancelled" {% if invoice.status == 'cancelled' %}selected{% endif %}>ملغاة</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">الوصف</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ invoice.description or '' }}</textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                        <a href="{{ url_for('invoices.view_invoice', invoice_id=invoice.id) }}" class="btn btn-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // التحقق من تاريخ الاستحقاق
+        const issueDateInput = document.getElementById('issue_date');
+        const dueDateInput = document.getElementById('due_date');
+
+        dueDateInput.addEventListener('change', validateDueDate);
+        issueDateInput.addEventListener('change', validateDueDate);
+
+        function validateDueDate() {
+            const issueDate = new Date(issueDateInput.value);
+            const dueDate = new Date(dueDateInput.value);
+
+            if (dueDate < issueDate) {
+                alert('يجب أن يكون تاريخ الاستحقاق بعد تاريخ الإصدار');
+                dueDateInput.value = issueDateInput.value;
+            }
+        }
+    });
+</script>
+{% endblock %}

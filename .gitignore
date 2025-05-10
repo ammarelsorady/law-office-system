@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+.env
+.venv
+env/
+venv/
+
+# Database
+*.db
+data/
+
+# Upload files
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Backup files
+backups/*
+!backups/.gitkeep
+
+# Session files
+flask_session/
+
+# Logs
+logs/*
+!logs/.gitkeep

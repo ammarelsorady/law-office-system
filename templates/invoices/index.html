@@ -1,0 +1,111 @@
+{% extends "layout/base.html" %}
+
+{% block title %}الفواتير - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>الفواتير</h1>
+    <a href="{{ url_for('invoices.add_invoice') }}" class="btn btn-primary">
+        <i class="fas fa-plus-circle"></i> إضافة فاتورة جديدة
+    </a>
+</div>
+
+<!-- فلتر الحالة -->
+<div class="mb-4">
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('invoices.index') }}" class="btn btn-outline-primary active">الكل</a>
+        <a href="{{ url_for('invoices.index', status='unpaid') }}" class="btn btn-outline-danger">غير مدفوعة</a>
+        <a href="{{ url_for('invoices.index', status='paid') }}" class="btn btn-outline-success">مدفوعة</a>
+        <a href="{{ url_for('invoices.index', status='partial') }}" class="btn btn-outline-warning">مدفوعة جزئياً</a>
+        <a href="{{ url_for('invoices.index', status='cancelled') }}" class="btn btn-outline-secondary">ملغاة</a>
+    </div>
+</div>
+
+{% if invoices %}
+<div class="table-responsive">
+    <table class="table table-hover table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>رقم الفاتورة</th>
+                <th>العميل</th>
+                <th>القضية</th>
+                <th>المبلغ</th>
+                <th>تاريخ الإصدار</th>
+                <th>تاريخ الاستحقاق</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices %}
+            <tr>
+                <td>{{ invoice.invoice_number }}</td>
+                <td>
+                    <a href="{{ url_for('clients.view_client', client_id=invoice.client.id) }}">
+                        {{ invoice.client.first_name }} {{ invoice.client.last_name }}
+                    </a>
+                </td>
+                <td>
+                    {% if invoice.case %}
+                    <a href="{{ url_for('cases.view_case', case_id=invoice.case.id) }}">
+                        {{ invoice.case.case_number }}
+                    </a>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>{{ "%.2f"|format(invoice.amount) }}</td>
+                <td>{{ invoice.issue_date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ invoice.due_date.strftime('%Y-%m-%d') }}</td>
+                <td>
+                    {% if invoice.status == 'paid' %}
+                    <span class="badge bg-success">مدفوعة</span>
+                    {% elif invoice.status == 'unpaid' %}
+                    <span class="badge bg-danger">غير مدفوعة</span>
+                    {% elif invoice.status == 'partial' %}
+                    <span class="badge bg-warning">مدفوعة جزئياً</span>
+                    {% elif invoice.status == 'cancelled' %}
+                    <span class="badge bg-secondary">ملغاة</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('invoices.view_invoice', invoice_id=invoice.id) }}" class="btn btn-sm btn-info" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ url_for('invoices.edit_invoice', invoice_id=invoice.id) }}" class="btn btn-sm btn-warning" title="تعديل">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% if session.role == 'admin' %}
+                        <button type="button" class="btn btn-sm btn-danger btn-delete" title="حذف" 
+                                onclick="if(confirm('هل أنت متأكد من رغبتك في حذف هذه الفاتورة؟')) { 
+                                    document.getElementById('delete-form-{{ invoice.id }}').submit(); 
+                                }">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <form id="delete-form-{{ invoice.id }}" action="{{ url_for('invoices.delete_invoice', invoice_id=invoice.id) }}" method="POST" style="display: none;">
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> لا توجد فواتير متاحة.
+</div>
+{% endif %}
+
+<!-- قسم المدفوعات -->
+<div class="mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>المدفوعات</h2>
+        <a href="{{ url_for('invoices.payments') }}" class="btn btn-primary">
+            <i class="fas fa-list"></i> عرض جميع المدفوعات
+        </a>
+    </div>
+</div>
+{% endblock %}
